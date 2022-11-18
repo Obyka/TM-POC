@@ -29,7 +29,6 @@ contract SampleNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
 
     function safeMint(address to, string memory uri)
         public
-        onlyOwner
     {
         uint256 newItemId = _tokenIds.current();
         _safeMint(to, newItemId);

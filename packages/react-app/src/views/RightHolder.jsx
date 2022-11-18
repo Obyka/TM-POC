@@ -19,7 +19,7 @@ export default function RightHolder({
     "FactoryCloneRightHolder",
     "rightHolderToContract",
     [address],
-    5,
+    1,
   );
   return (
     rightHolderContract == 0 && (

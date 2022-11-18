@@ -21,8 +21,8 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
     }
   }
 
-  const [rightHolders, setRightHolders] = useState("");
-  const [shares, setShares] = useState("");
+  const [rightHolders, setRightHolders] = useState(address);
+  const [shares, setShares] = useState("100");
 
   return (
     <div>

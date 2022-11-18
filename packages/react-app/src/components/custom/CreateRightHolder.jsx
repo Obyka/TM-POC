@@ -50,7 +50,7 @@ export default function CreateRightHolder({ address, tx, readContracts, writeCon
         </div>
         <Divider />
 
-        {rightHolderContract}
+        {rightHolderContract != 0 && rightHolderContract}
       </div>
     </div>
   );
