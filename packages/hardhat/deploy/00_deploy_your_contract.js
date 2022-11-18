@@ -46,5 +46,22 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   });
   const FactoryCloneArtist = await ethers.getContract("FactoryCloneArtist", deployer);
 
+  await deploy("RightHolder", {
+    from: deployer,
+    log: true,
+    waitConfirmations: 5,
+  });
+
+  const RightHolder = await ethers.getContract("RightHolder", deployer);
+
+  await deploy("FactoryCloneRightHolder", {
+    from: deployer,
+    log: true,
+    waitConfirmations: 5,
+  });
+  const FactoryCloneRightHolder = await ethers.getContract("FactoryCloneRightHolder", deployer);
+
+  
+
 };
-module.exports.tags = ["NFTFractionner", "SampleNFT", "NFTShares", "Artist", "FactoryCloneArtist"];
+module.exports.tags = ["NFTFractionner", "SampleNFT", "NFTShares", "Artist", "FactoryCloneArtist", "FactoryCloneRightHolder"];
