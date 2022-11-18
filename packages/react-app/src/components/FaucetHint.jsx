@@ -3,18 +3,16 @@ import React, { useState } from "react";
 import { ethers } from "ethers";
 import { useBalance, useGasPrice } from "eth-hooks";
 
-import { getRPCPollTime, Transactor } from "../helpers";
+import { Transactor } from "../helpers";
 
 function FaucetHint({ localProvider, targetNetwork, address }) {
   const [faucetClicked, setFaucetClicked] = useState(false);
 
-  const localProviderPollingTime = getRPCPollTime(localProvider);
-
   // fetch local balance
-  const yourLocalBalance = useBalance(localProvider, address, localProviderPollingTime);
+  const yourLocalBalance = useBalance(localProvider, address);
 
   // get gas Price from network
-  const gasPrice = useGasPrice(targetNetwork, "fast", localProviderPollingTime);
+  const gasPrice = useGasPrice(targetNetwork, "fast");
 
   // Faucet Tx can be used to send funds from the faucet
   const faucetTx = Transactor(localProvider, gasPrice);

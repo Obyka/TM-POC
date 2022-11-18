@@ -1,12 +1,11 @@
 import { Button, Col, Menu, Row } from "antd";
-
 import "antd/dist/antd.css";
 import {
   useBalance,
   useContractLoader,
   useContractReader,
   useGasPrice,
-  // useOnBlock,
+  useOnBlock,
   useUserProviderAndSigner,
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
@@ -29,29 +28,11 @@ import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
-import { getRPCPollTime, Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph } from "./views";
+import { Transactor, Web3ModalSetup } from "./helpers";
+import { Artist, TyxitAdmin, NFTBuyer, RightHolder } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 
 const { ethers } = require("ethers");
-/*
-    Welcome to 🏗 scaffold-eth !
-
-    Code:
-    https://github.com/scaffold-eth/scaffold-eth
-
-    Support:
-    https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA
-    or DM @austingriffith on twitter or telegram
-
-    You should get your own Alchemy.com & Infura.io ID and put it in `constants.js`
-    (this is your connection to the main Ethereum network for ENS etc.)
-
-
-    🌏 EXTERNAL CONTRACTS:
-    You can also bring in contract artifacts in `constants.js`
-    (and then use the `useExternalContractLoader()` hook!)
-*/
 
 /// 📡 What chain are your contracts deployed to?
 const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, goerli, xdai, mainnet)
@@ -59,7 +40,7 @@ const initialNetwork = NETWORKS.localhost; // <------- select your target fronte
 // 😬 Sorry for all the console logging
 const DEBUG = true;
 const NETWORKCHECK = true;
-const USE_BURNER_WALLET = true; // toggle burner wallet feature
+const USE_BURNER_WALLET = false; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
 
 const web3Modal = Web3ModalSetup();
@@ -90,12 +71,7 @@ function App(props) {
   const localProvider = useStaticJsonRPC([
     process.env.REACT_APP_PROVIDER ? process.env.REACT_APP_PROVIDER : targetNetwork.rpcUrl,
   ]);
-
-  const mainnetProvider = useStaticJsonRPC(providers, localProvider);
-
-  // Sensible pollTimes depending on the provider you are using
-  const localProviderPollingTime = getRPCPollTime(localProvider);
-  const mainnetProviderPollingTime = getRPCPollTime(mainnetProvider);
+  const mainnetProvider = useStaticJsonRPC(providers);
 
   if (DEBUG) console.log(`Using ${selectedNetwork} network`);
 
@@ -113,10 +89,10 @@ function App(props) {
   };
 
   /* 💵 This hook will get the price of ETH from 🦄 Uniswap: */
-  const price = useExchangeEthPrice(targetNetwork, mainnetProvider, mainnetProviderPollingTime);
+  const price = useExchangeEthPrice(targetNetwork, mainnetProvider);
 
   /* 🔥 This hook will get the price of Gas from ⛽️ EtherGasStation */
-  const gasPrice = useGasPrice(targetNetwork, "fast", localProviderPollingTime);
+  const gasPrice = useGasPrice(targetNetwork, "fast");
   // Use your injected provider from 🦊 Metamask or if you don't have it then instantly generate a 🔥 burner wallet.
   const userProviderAndSigner = useUserProviderAndSigner(injectedProvider, localProvider, USE_BURNER_WALLET);
   const userSigner = userProviderAndSigner.signer;
@@ -142,12 +118,10 @@ function App(props) {
   const tx = Transactor(userSigner, gasPrice);
 
   // 🏗 scaffold-eth is full of handy hooks like this one to get your balance:
-  const yourLocalBalance = useBalance(localProvider, address, localProviderPollingTime);
+  const yourLocalBalance = useBalance(localProvider, address);
 
   // Just plug in different 🛰 providers to get your balance on different chains:
-  const yourMainnetBalance = useBalance(mainnetProvider, address, mainnetProviderPollingTime);
-
-  // const contractConfig = useContractConfig();
+  const yourMainnetBalance = useBalance(mainnetProvider, address);
 
   const contractConfig = { deployedContracts: deployedContracts || {}, externalContracts: externalContracts || {} };
 
@@ -157,32 +131,10 @@ function App(props) {
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
   const writeContracts = useContractLoader(userSigner, contractConfig, localChainId);
 
-  // EXTERNAL CONTRACT EXAMPLE:
-  //
-  // If you want to bring in the mainnet DAI contract it would look like:
-  const mainnetContracts = useContractLoader(mainnetProvider, contractConfig);
-
   // If you want to call a function on a new block
-  // useOnBlock(mainnetProvider, () => {
-  //   console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
-  // });
-
-  // Then read your DAI balance like:
-  const myMainnetDAIBalance = useContractReader(
-    mainnetContracts,
-    "DAI",
-    "balanceOf",
-    ["0x34aA3F359A9D614239015126635CE7732c18fDF3"],
-    mainnetProviderPollingTime,
-  );
-
-  // keep track of a variable from the contract in the local React state:
-  const purpose = useContractReader(readContracts, "YourContract", "purpose", [], localProviderPollingTime);
-
-  /*
-  const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
-  console.log("🏷 Resolved austingriffith.eth as:", addressFromENS)
-  */
+  useOnBlock(mainnetProvider, () => {
+    console.log(`⛓ A new mainnet block is here: ${mainnetProvider._lastBlockNumber}`);
+  });
 
   //
   // 🧫 DEBUG 👨🏻‍🔬
@@ -196,8 +148,7 @@ function App(props) {
       yourLocalBalance &&
       yourMainnetBalance &&
       readContracts &&
-      writeContracts &&
-      mainnetContracts
+      writeContracts
     ) {
       console.log("_____________________________________ 🏗 scaffold-eth _____________________________________");
       console.log("🌎 mainnetProvider", mainnetProvider);
@@ -207,8 +158,6 @@ function App(props) {
       console.log("💵 yourLocalBalance", yourLocalBalance ? ethers.utils.formatEther(yourLocalBalance) : "...");
       console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
       console.log("📝 readContracts", readContracts);
-      console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
       console.log("🔐 writeContracts", writeContracts);
     }
   }, [
@@ -219,9 +168,7 @@ function App(props) {
     yourMainnetBalance,
     readContracts,
     writeContracts,
-    mainnetContracts,
     localChainId,
-    myMainnetDAIBalance,
   ]);
 
   const loadWeb3Modal = useCallback(async () => {
@@ -257,7 +204,7 @@ function App(props) {
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
-      <Header>
+      <Header title="Tyxit Demo">
         {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
         <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", flex: 1 }}>
@@ -297,30 +244,30 @@ function App(props) {
         USE_NETWORK_SELECTOR={USE_NETWORK_SELECTOR}
       />
       <Menu style={{ textAlign: "center", marginTop: 20 }} selectedKeys={[location.pathname]} mode="horizontal">
-        <Menu.Item key="/">
-          <Link to="/">App Home</Link>
-        </Menu.Item>
         <Menu.Item key="/debug">
           <Link to="/debug">Debug Contracts</Link>
         </Menu.Item>
-        <Menu.Item key="/hints">
-          <Link to="/hints">Hints</Link>
+
+        <Menu.Item key="/artist">
+          <Link to="/artist">Artists UI</Link>
         </Menu.Item>
-        <Menu.Item key="/exampleui">
-          <Link to="/exampleui">ExampleUI</Link>
+
+        <Menu.Item key="/nftbuyer">
+          <Link to="/nftbuyer">NFT Buyer</Link>
         </Menu.Item>
-        <Menu.Item key="/mainnetdai">
-          <Link to="/mainnetdai">Mainnet DAI</Link>
+
+        <Menu.Item key="/rightholder">
+          <Link to="/rightholder">Right Holder</Link>
         </Menu.Item>
-        <Menu.Item key="/subgraph">
-          <Link to="/subgraph">Subgraph</Link>
+
+        <Menu.Item key="/tyxitadmin">
+          <Link to="/tyxitadmin">Tyxit administrator</Link>
         </Menu.Item>
       </Menu>
 
       <Switch>
         <Route exact path="/">
           {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
         </Route>
         <Route exact path="/debug">
           {/*
@@ -330,7 +277,47 @@ function App(props) {
             */}
 
           <Contract
-            name="YourContract"
+            name="SampleNFT"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="NFTShares"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="NFTFractionner"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="FactoryCloneArtist"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="Artist"
             price={price}
             signer={userSigner}
             provider={localProvider}
@@ -339,16 +326,9 @@ function App(props) {
             contractConfig={contractConfig}
           />
         </Route>
-        <Route path="/hints">
-          <Hints
-            address={address}
-            yourLocalBalance={yourLocalBalance}
-            mainnetProvider={mainnetProvider}
-            price={price}
-          />
-        </Route>
-        <Route path="/exampleui">
-          <ExampleUI
+
+        <Route path="/artist">
+          <Artist
             address={address}
             userSigner={userSigner}
             mainnetProvider={mainnetProvider}
@@ -358,37 +338,39 @@ function App(props) {
             tx={tx}
             writeContracts={writeContracts}
             readContracts={readContracts}
-            purpose={purpose}
           />
         </Route>
-        <Route path="/mainnetdai">
-          <Contract
-            name="DAI"
-            customContract={mainnetContracts && mainnetContracts.contracts && mainnetContracts.contracts.DAI}
-            signer={userSigner}
-            provider={mainnetProvider}
+
+        <Route path="/tyxitadmin">
+          <TyxitAdmin
             address={address}
-            blockExplorer="https://etherscan.io/"
-            contractConfig={contractConfig}
-            chainId={1}
-          />
-          {/*
-            <Contract
-              name="UNI"
-              customContract={mainnetContracts && mainnetContracts.contracts && mainnetContracts.contracts.UNI}
-              signer={userSigner}
-              provider={mainnetProvider}
-              address={address}
-              blockExplorer="https://etherscan.io/"
-            />
-            */}
-        </Route>
-        <Route path="/subgraph">
-          <Subgraph
-            subgraphUri={props.subgraphUri}
+            mainnetProvider={mainnetProvider}
+            localProvider={localProvider}
             tx={tx}
             writeContracts={writeContracts}
+            readContracts={readContracts}
+          />
+        </Route>
+
+        <Route path="/rightholder">
+          <RightHolder
+            address={address}
             mainnetProvider={mainnetProvider}
+            localProvider={localProvider}
+            tx={tx}
+            writeContracts={writeContracts}
+            readContracts={readContracts}
+          />
+        </Route>
+
+        <Route path="/nftbuyer">
+          <NFTBuyer
+            address={address}
+            mainnetProvider={mainnetProvider}
+            localProvider={localProvider}
+            tx={tx}
+            writeContracts={writeContracts}
+            readContracts={readContracts}
           />
         </Route>
       </Switch>

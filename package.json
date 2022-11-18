@@ -68,7 +68,9 @@
       "**/hardhat-ts/**"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3"
+  },
   "devDependencies": {
     "husky": "^7.0.2",
     "lint-staged": "^13.0.3"

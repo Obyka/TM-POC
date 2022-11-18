@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useBalance } from "eth-hooks";
-import { getRPCPollTime } from "../helpers";
 
 const { utils } = require("ethers");
 
-/**
+/** 
   ~ What it does? ~
 
   Displays a balance of given address in ether & dollar
@@ -33,9 +32,7 @@ const { utils } = require("ethers");
 export default function Balance(props) {
   const [dollarMode, setDollarMode] = useState(true);
 
-  let localProviderPollingTime = getRPCPollTime(props.provider);
-
-  const balance = useBalance(props.provider, props.address, localProviderPollingTime);
+  const balance = useBalance(props.provider, props.address);
   let floatBalance = parseFloat("0.00");
   let usingBalance = balance;
 
