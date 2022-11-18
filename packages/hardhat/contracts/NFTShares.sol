@@ -13,7 +13,7 @@ contract NFTShares is ERC721Holder {
 
     // Events
     event Init();
-    event PriceProposition(address indexed _owner, uint _value);
+    event TierProposition(address indexed _owner, uint8 _value);
     event ForSale(uint _price);
     event Purchase(address indexed _buyer, uint _value);
     event Redeem(address indexed _owner, uint _value);
@@ -22,7 +22,7 @@ contract NFTShares is ERC721Holder {
 
     struct Owner { 
         uint share;
-        uint proposedPrice;
+        uint8 proposedTier;
         bool proposed;
         bool isOwner;
         bool hasRedeem;
@@ -31,8 +31,9 @@ contract NFTShares is ERC721Holder {
     State public contractState;
 
     mapping(address => Owner) public ownersStruct;
+    uint8[3] tierPrice = [1, 10, 100];
     address[] public ownerList;
-    uint public salePrice;
+    uint8 public saleTier;
     address royalties_address;
     uint royalties_basis_points;
 
@@ -43,7 +44,7 @@ contract NFTShares is ERC721Holder {
     // Check if the NFT implements ERC2981
     bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
 
-    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+    function max(uint8 a, uint8 b) internal pure returns (uint8) {
         return a >= b ? a : b;
     }
 
@@ -54,7 +55,7 @@ contract NFTShares is ERC721Holder {
     function newOwner(address ownerAddress, uint share) internal {
         require(!isOwner(ownerAddress));
         ownersStruct[ownerAddress].share = share;
-        ownersStruct[ownerAddress].proposedPrice = 0;
+        ownersStruct[ownerAddress].proposedTier = 0;
         ownersStruct[ownerAddress].proposed = false;
         ownersStruct[ownerAddress].isOwner = true;
         ownersStruct[ownerAddress].hasRedeem = false;
@@ -72,7 +73,7 @@ contract NFTShares is ERC721Holder {
             require(ownersStruct[ownerList[i]].proposed, "Every owner must propose a price");
         }
         contractState = State.ForSale;
-        emit ForSale(salePrice);
+        emit ForSale(saleTier);
     }
 
     function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _owners, uint[] memory _shares) external {
@@ -103,7 +104,7 @@ contract NFTShares is ERC721Holder {
 
     function purchase() external payable {
         require(contractState == State.ForSale, "Can not purchase yet");
-        require(msg.value >= salePrice, "Not enough ether sent");
+        require(msg.value >= tierPrice[saleTier], "Not enough ether sent");
         // Si ERC2981 est supportée, on récupère les infos pour les royalties
         if(checkRoyalties(collection_address)){
             address receiver;
@@ -117,14 +118,14 @@ contract NFTShares is ERC721Holder {
         emit Purchase(msg.sender, msg.value);
     }
 
-    function setOwnerPrice(uint price) onlyOwner external{
+    function setOwnerTier(uint8 tierId) onlyOwner external{
         require(contractState == State.Initialized, "Contract must be initialized.");
-        require(price > 0, "Price must be greater than zero");
+        require(tierId <= 2, "Tier not available");
         require(!ownersStruct[msg.sender].proposed, "Owner already proposed a price");
         ownersStruct[msg.sender].proposed = true;
-        ownersStruct[msg.sender].proposedPrice = price;
-        salePrice = max(price, salePrice);
-        emit PriceProposition(msg.sender, price);
+        ownersStruct[msg.sender].proposedTier = tierId;
+        saleTier = max(tierId, saleTier);
+        emit TierProposition(msg.sender, tierId);
     }
 
         /** @dev Permet aux possesseurs de fractions de récupérer leur dû
@@ -134,7 +135,7 @@ contract NFTShares is ERC721Holder {
         require(!ownersStruct[msg.sender].hasRedeem, "Owner has already redeemed");
         ownersStruct[msg.sender].hasRedeem = true;
         // TO-DO: Vérifier opération
-        uint256 toRedeem = ownersStruct[msg.sender].share * salePrice / 100;
+        uint256 toRedeem = ownersStruct[msg.sender].share * tierPrice[saleTier] / 100;
         payable(msg.sender).transfer(toRedeem);
         emit Redeem(msg.sender, toRedeem);
     }
@@ -145,8 +146,6 @@ contract NFTShares is ERC721Holder {
     }
 
     function sendViaCall(address payable _to, uint _value) internal {
-        // Call returns a boolean value indicating success or failure.
-        // This is the current recommended method to use.
         (bool sent,) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");
     }

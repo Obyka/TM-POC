@@ -190,6 +190,15 @@ export default function MintNFT({
       <Events
         contracts={readContracts}
         contractName="SampleNFT"
+        eventName="Approval"
+        eventTitle="Approval d'une adresse"
+        localProvider={localProvider}
+        mainnetProvider={mainnetProvider}
+        startBlock={1}
+      />
+      <Events
+        contracts={readContracts}
+        contractName="SampleNFT"
         eventName="Transfer"
         eventTitle="Création ou transfert"
         localProvider={localProvider}
