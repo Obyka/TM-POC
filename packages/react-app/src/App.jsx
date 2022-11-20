@@ -297,16 +297,6 @@ function App(props) {
           />
 
           <Contract
-            name="NFTFractionner"
-            price={price}
-            signer={userSigner}
-            provider={localProvider}
-            address={address}
-            blockExplorer={blockExplorer}
-            contractConfig={contractConfig}
-          />
-
-          <Contract
             name="FactoryCloneArtist"
             price={price}
             signer={userSigner}
@@ -318,6 +308,26 @@ function App(props) {
 
           <Contract
             name="Artist"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="FactoryCloneAgreement"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
+            name="Agreement"
             price={price}
             signer={userSigner}
             provider={localProvider}

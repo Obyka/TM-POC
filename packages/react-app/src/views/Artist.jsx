@@ -15,7 +15,7 @@ export default function Artist({
   readContracts,
   writeContracts,
 }) {
-  const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 5);
+  const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 1);
   if (artistContract == 0) {
     return <CreateArtist address={address} tx={tx} writeContracts={writeContracts} readContracts={readContracts} />;
   } else {

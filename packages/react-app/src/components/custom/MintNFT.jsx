@@ -1,5 +1,6 @@
 import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
 import React, { useState } from "react";
+import { ethers } from "ethers";
 
 import { create } from "ipfs-http-client";
 
@@ -17,7 +18,6 @@ export default function MintNFT({
 }) {
   const projectId = process.env.REACT_APP_IPFS_PROJECT_ID;
   const projectSecret = process.env.REACT_APP_IPFS_PROJECT_SECRET;
-  console.log(`Project id is ${projectId}`);
   const authorization = "Basic " + btoa(projectId + ":" + projectSecret);
   let ipfs;
   try {
@@ -82,6 +82,8 @@ export default function MintNFT({
     form.reset();
   };
 
+  const [artists, setArtists] = useState("");
+
   return (
     <div>
       {/*
@@ -143,6 +145,15 @@ export default function MintNFT({
             }}
           />
 
+          <Input
+            style={{ marginTop: 8 }}
+            placeholder="Co-artists addresses"
+            onChange={e => {
+              setArtists(e.target.value);
+              console.log(artists);
+            }}
+          />
+
           <Button
             style={{ marginTop: 8 }}
             onClick={async () => {
@@ -156,26 +167,24 @@ export default function MintNFT({
               const jsonUploadResult = await ipfs.add(JSON.stringify(objectToSend));
               console.log(jsonUploadResult);
 
-              const result = tx(
+              const result_mint = tx(
                 writeContracts.SampleNFT.safeMint(address, `ipfs://${jsonUploadResult.path}`),
-                update => {
-                  console.log("📡 Transaction Update:", update);
-                  if (update && (update.status === "confirmed" || update.status === 1)) {
-                    console.log(" 🍾 Transaction " + update.hash + " finished!");
-                    console.log(
-                      " ⛽️ " +
-                        update.gasUsed +
-                        "/" +
-                        (update.gasLimit || update.gas) +
-                        " @ " +
-                        parseFloat(update.gasPrice) / 1000000000 +
-                        " gwei",
-                    );
-                  }
-                },
+                updateNotif,
               );
-              console.log("awaiting metamask/web3 confirm result...", result);
-              console.log(await result);
+              await result_mint;
+              console.log(result_mint);
+              // We need to predict deployment address to avoid useless TXs
+              const randomNumberSalt = ethers.BigNumber.from(ethers.utils.randomBytes(32));
+              const implementationAddress = readContracts.FactoryCloneAgreement.agreementImpl;
+              const predictAddress = tx(
+                writeContracts.FactoryCloneAgreement.predictDeterministicAddress(
+                  implementationAddress,
+                  randomNumberSalt,
+                  address,
+                ),
+              );
+              console.log(`predicted address is ${predictAddress}`);
+              // predictDeterministicAddress(address implementation, bytes32 salt, address deployer) → address predicted
             }}
           >
             Mint NFT
