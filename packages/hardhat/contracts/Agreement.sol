@@ -86,7 +86,7 @@ contract Agreement is ERC721Holder {
         emit ForSale(saleTier);
     }
 
-    function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists) external {
+    function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external {
         require(contractState == State.Uninitialized, "Already initialized");
 
         for (uint i = 0; i < _artists.length; i++) {
@@ -98,7 +98,7 @@ contract Agreement is ERC721Holder {
 
         collection = IERC721(_collectionAddress);
         collection_address = _collectionAddress;
-        collection.safeTransferFrom(msg.sender, address(this), _tokenId);
+        collection.safeTransferFrom(_initialOwner, address(this), _tokenId);
         tokenId = _tokenId;
         contractState = State.Initialized;
         emit Init();

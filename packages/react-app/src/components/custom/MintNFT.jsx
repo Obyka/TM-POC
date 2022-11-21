@@ -1,21 +1,12 @@
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
+import { Button, DatePicker, Divider, Input } from "antd";
 import React, { useState } from "react";
 import { ethers } from "ethers";
 
 import { create } from "ipfs-http-client";
 
-import { AddressInput, Address, Balance, Events } from "../";
+import { Address, Events } from "../";
 
-export default function MintNFT({
-  address,
-  mainnetProvider,
-  localProvider,
-  yourLocalBalance,
-  price,
-  tx,
-  readContracts,
-  writeContracts,
-}) {
+export default function MintNFT({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
   const projectId = process.env.REACT_APP_IPFS_PROJECT_ID;
   const projectSecret = process.env.REACT_APP_IPFS_PROJECT_SECRET;
   const authorization = "Basic " + btoa(projectId + ":" + projectSecret);
@@ -44,6 +35,7 @@ export default function MintNFT({
   });
 
   const [image, setImage] = useState("");
+  const [artists, setArtists] = useState("");
 
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
@@ -81,8 +73,6 @@ export default function MintNFT({
 
     form.reset();
   };
-
-  const [artists, setArtists] = useState("");
 
   return (
     <div>
@@ -172,7 +162,7 @@ export default function MintNFT({
                   console.log(result);
                   result.wait().then(async receipt => {
                     // TokenID
-                    // https://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsxhttps://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsx
+                    // https://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsx
                     console.log(`Minted tokenID ${receipt.events[0].args[2]}`);
 
                     const tokenID = receipt.events[0].args[2];
@@ -193,19 +183,33 @@ export default function MintNFT({
                     predictAddressPromise.then(function (predictedAddress) {
                       console.log(`predicted address is ${predictedAddress}`);
 
-                      const approvePromise = tx(
-                        writeContracts.SampleNFT.approve(predictedAddress, tokenID),
-                        updateNotif,
-                      );
+                      tx(writeContracts.SampleNFT.approve(predictedAddress, tokenID), updateNotif)
+                        .then(result => {
+                          const splittedArtists = artists.split(",");
+                          splittedArtists.push(address);
+                          console.log(
+                            `Created Agreement ${splittedArtists}\n${readContracts.SampleNFT.address}\n${tokenID}`,
+                          );
+                          tx(
+                            writeContracts.FactoryCloneAgreement.createAgreement(
+                              splittedArtists,
+                              readContracts.SampleNFT.address,
+                              tokenID,
+                              randomNumberSalt,
+                            ),
+                            updateNotif,
+                          )
+                            .then(() => console.log("Creation du contrat d'agreement"))
+                            .catch(error => console.log(error));
+                        })
+                        .catch(error => console.log(error));
                     });
                   });
                 },
               );
-
-              // predictDeterministicAddress(address implementation, bytes32 salt, address deployer) → address predicted
             }}
           >
-            Mint NFT
+            Create an agreement
           </Button>
         </div>
         <Divider />
