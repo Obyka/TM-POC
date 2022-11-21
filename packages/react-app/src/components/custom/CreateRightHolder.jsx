@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useContractReader } from "eth-hooks";
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
+import { Button, Card, Form, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
 import { AddressInput, Address, Balance, Events } from "../";
 
 export default function CreateRightHolder({ address, tx, readContracts, writeContracts, mainnetProvider }) {
@@ -27,31 +27,35 @@ export default function CreateRightHolder({ address, tx, readContracts, writeCon
     }
   }
 
+  const [deploying, setDeploying] = useState(false);
+
   return (
-    <div>
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-        <h2>Register as a right holder:</h2>
-        <Address address={writeContracts.FactoryCloneRightHolder.address} ensProvider={mainnetProvider} fontSize={15} />
+    <Card
+      title="Create your adhesion contract as a right holder"
+      style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}
+    >
+      <Address address={writeContracts.FactoryCloneRightHolder.address} ensProvider={mainnetProvider} fontSize={15} />
+      <Form layout="vertical">
+        <Button
+          loading={deploying}
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            setDeploying(true);
 
-        <Divider />
-        <div style={{ margin: 8 }}>
-          <h3>Join</h3>
-
-          <Button
-            style={{ marginTop: 8 }}
-            onClick={async () => {
+            try {
               const result = tx(writeContracts.FactoryCloneRightHolder.createRightHolder(), updateNotif);
+
               console.log("awaiting metamask/web3 confirm result...", result);
               console.log(await result);
-            }}
-          >
-            Clone contract
-          </Button>
-        </div>
-        <Divider />
-
-        {rightHolderContract != 0 && rightHolderContract}
-      </div>
-    </div>
+            } catch (e) {
+              setDeploying(false);
+              console.log(e);
+            }
+          }}
+        >
+          Create your adhesion contract
+        </Button>
+      </Form>
+    </Card>
   );
 }
