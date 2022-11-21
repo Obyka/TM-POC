@@ -167,23 +167,41 @@ export default function MintNFT({
               const jsonUploadResult = await ipfs.add(JSON.stringify(objectToSend));
               console.log(jsonUploadResult);
 
-              const result_mint = tx(
-                writeContracts.SampleNFT.safeMint(address, `ipfs://${jsonUploadResult.path}`),
-                updateNotif,
+              tx(writeContracts.SampleNFT.safeMint(address, `ipfs://${jsonUploadResult.path}`), updateNotif).then(
+                result => {
+                  console.log(result);
+                  result.wait().then(async receipt => {
+                    // TokenID
+                    // https://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsxhttps://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsx
+                    console.log(`Minted tokenID ${receipt.events[0].args[2]}`);
+
+                    const tokenID = receipt.events[0].args[2];
+                    // We need to predict deployment address to avoid useless TXs
+                    const randomNumberSalt = ethers.BigNumber.from(ethers.utils.randomBytes(32));
+                    const implementationAddress = await readContracts.FactoryCloneAgreement.agreementImpl();
+
+                    console.log(
+                      `Salt: ${randomNumberSalt}\n Impl. Address: ${implementationAddress}\n Address: ${address}`,
+                    );
+                    const predictAddressPromise = tx(
+                      readContracts.FactoryCloneAgreement.predictDeterministicAddress(
+                        implementationAddress,
+                        randomNumberSalt,
+                        address,
+                      ),
+                    );
+                    predictAddressPromise.then(function (predictedAddress) {
+                      console.log(`predicted address is ${predictedAddress}`);
+
+                      const approvePromise = tx(
+                        writeContracts.SampleNFT.approve(predictedAddress, tokenID),
+                        updateNotif,
+                      );
+                    });
+                  });
+                },
               );
-              await result_mint;
-              console.log(result_mint);
-              // We need to predict deployment address to avoid useless TXs
-              const randomNumberSalt = ethers.BigNumber.from(ethers.utils.randomBytes(32));
-              const implementationAddress = readContracts.FactoryCloneAgreement.agreementImpl;
-              const predictAddress = tx(
-                writeContracts.FactoryCloneAgreement.predictDeterministicAddress(
-                  implementationAddress,
-                  randomNumberSalt,
-                  address,
-                ),
-              );
-              console.log(`predicted address is ${predictAddress}`);
+
               // predictDeterministicAddress(address implementation, bytes32 salt, address deployer) → address predicted
             }}
           >

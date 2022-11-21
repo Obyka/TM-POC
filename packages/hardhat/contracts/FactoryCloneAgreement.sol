@@ -12,7 +12,6 @@ contract FactoryCloneAgreement {
 
     constructor() {
         agreementImpl = address(new Agreement());
-
     }
 
     function createAgreement(address[] memory  _artists, address _collection_address, uint _tokenId) external returns (address){
@@ -21,5 +20,13 @@ contract FactoryCloneAgreement {
         agreementToContract[msg.sender] = clone;
         emit AgreementCreated(_artists, clone);
         return clone;
+    }
+
+    function predictDeterministicAddress(
+        address implementation,
+        bytes32 salt,
+        address deployer
+    ) public pure returns (address predicted) {
+        return Clones.predictDeterministicAddress(implementation, salt, deployer);
     }
 }

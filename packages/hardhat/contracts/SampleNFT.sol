@@ -29,11 +29,13 @@ contract SampleNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
 
     function safeMint(address to, string memory uri)
         public
+        returns (uint256 newTokenId)
     {
         uint256 newItemId = _tokenIds.current();
         _safeMint(to, newItemId);
         _setTokenURI(newItemId, uri);
         _tokenIds.increment();
+        return newItemId;
     }
 
     // The following functions are overrides required by Solidity.
