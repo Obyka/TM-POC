@@ -9,13 +9,6 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   const { deployer } = await getNamedAccounts();
   const chainId = await getChainId();
 
-  await deploy("NFTFractionner", {
-    from: deployer,
-    log: true,
-    waitConfirmations: 5,
-  });
-  const NFTFractionner = await ethers.getContract("NFTFractionner", deployer);
-
   await deploy("SampleNFT", {
     from: deployer,
     log: true,

@@ -2,6 +2,7 @@ import { Button, Divider } from "antd";
 import React, { useState } from "react";
 
 import { AddressInput, Address, Balance, Events } from "../components";
+import ManageAgreements from "../components/custom/ManageAgreements";
 
 export default function TyxitAdmin({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
   function updateNotif(update) {
@@ -21,10 +22,12 @@ export default function TyxitAdmin({ address, mainnetProvider, localProvider, tx
   }
 
   return (
-    <div>
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-        <h2>Current sales:</h2>
-      </div>
-    </div>
+    <ManageAgreements
+      localProvider={localProvider}
+      address={address}
+      tx={tx}
+      writeContracts={writeContracts}
+      readContracts={readContracts}
+    />
   );
 }

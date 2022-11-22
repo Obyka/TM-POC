@@ -2,14 +2,11 @@
 pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RightHolder is Ownable{
-
+contract RightHolder is Ownable {
     event Received(address from, uint amount);
     event Withdraw(address to, uint amount);
 
-    function initialize() external {
-
-    }
+    function initialize() external {}
 
     receive() external payable {
         emit Received(msg.sender, msg.value);
@@ -24,9 +21,7 @@ contract RightHolder is Ownable{
     }
 
     function sendViaCall(address payable _to, uint _value) internal {
-        // Call returns a boolean value indicating success or failure.
-        // This is the current recommended method to use.
-        (bool sent,) = _to.call{value: _value}("");
+        (bool sent, ) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");
     }
 }

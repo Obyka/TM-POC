@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useContractReader } from "eth-hooks";
 import { AddressInput, Address, Balance, Events } from "../components";
 import CreateRightHolder from "../components/custom/CreateRightHolder";
+import ManageAffiliations from "../components/custom/ManageAffiliations";
 
 export default function RightHolder({
   address,
@@ -14,16 +15,28 @@ export default function RightHolder({
   readContracts,
   writeContracts,
 }) {
-  const rightHolderContract = useContractReader(
+  const rightHolderContractAddress = useContractReader(
     readContracts,
     "FactoryCloneRightHolder",
     "rightHolderToContract",
     [address],
     1,
   );
-  return (
-    rightHolderContract == 0 && (
+
+  if (rightHolderContractAddress == 0) {
+    return (
       <CreateRightHolder address={address} tx={tx} writeContracts={writeContracts} readContracts={readContracts} />
-    )
-  );
+    );
+  } else {
+    return (
+      <ManageAffiliations
+        rightHolderContractAddress={rightHolderContractAddress}
+        localProvider={localProvider}
+        address={address}
+        tx={tx}
+        writeContracts={writeContracts}
+        readContracts={readContracts}
+      />
+    );
+  }
 }

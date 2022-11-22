@@ -9,7 +9,7 @@ contract FactoryCloneAgreement {
     address public immutable agreementImpl;
     
     mapping(address => address) public agreementToContract;
-    event AgreementCreated(address[] indexed _coArtists, address _contract);
+    event AgreementCreated(address[] _coArtists, address _contract);
 
     constructor() {
         agreementImpl = address(new Agreement());
@@ -23,9 +23,10 @@ contract FactoryCloneAgreement {
         console.log("Agreement impl %s",agreementImpl);
 
 
-        Agreement(payable(clone)).initialize(_collection_address, _tokenId, _artists, msg.sender);
+        Agreement(clone).initialize(_collection_address, _tokenId, _artists, msg.sender);
         agreementToContract[msg.sender] = clone;
         emit AgreementCreated(_artists, clone);
+        console.log("Event emitted");
         return clone;
     }
 

@@ -27,6 +27,7 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   const [rightHolders, setRightHolders] = useState([address]);
   const [shares, setShares] = useState([100]);
   const [deploying, setDeploying] = useState(false);
+  const [validData, setValidData] = useState(false);
 
   return (
     <Card title="Create your adhesion contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
@@ -37,7 +38,8 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
           name="rightholders"
           style={{ margin: 0 }}
           tooltip={{
-            title: "Enter each right holder as a separate row, with their address and their shares in percent",
+            title:
+              "Enter each right holder (yourself excepted) as a separate row, with their address and their shares in percent",
             icon: <InfoCircleOutlined />,
           }}
         >
@@ -47,28 +49,28 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
               setShares([]);
               setRightHolders([]);
               const results = readString(event.target.value, { dynamicTyping: true });
-              let invalidData = false;
 
               try {
                 if (results.data) {
                   results.data.map(currentLine => {
                     if (
+                      currentLine[0] === address ||
                       !ethers.utils.isAddress(currentLine[0]) ||
                       typeof currentLine[1] !== "number" ||
-                      currentLine[1] >= 100
+                      currentLine[1] > 100
                     ) {
-                      invalidData = true;
+                      setValidData(false);
                     } else {
-                      console.log("congrat");
+                      setValidData(true);
                       setRightHolders(prev => [...prev, currentLine[0]]);
                       setShares(prev => [...prev, currentLine[1]]);
                     }
                     return currentLine;
                   });
 
-                  if (invalidData) {
-                    setRightHolders([address]);
-                    setShares([100]);
+                  if (!validData) {
+                    setRightHolders([]);
+                    setShares([]);
                     throw "invalid data";
                   }
                 }
@@ -81,6 +83,7 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
         </Form.Item>
 
         <Button
+          disabled={!validData}
           loading={deploying}
           style={{ marginTop: 8 }}
           onClick={async () => {
@@ -90,6 +93,7 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
 
             console.log(`Right holder ${rightHolders}`);
             console.log(`Shares ${shares}`);
+            shares.map(share => share * 100);
             try {
               const result = tx(writeContracts.FactoryCloneArtist.createArtist(rightHolders, shares), updateNotif);
 

@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./Artist.sol";
 
 contract FactoryCloneArtist {
     address immutable public artistImpl;
     mapping(address => address) public artistToContract;
-    event ArtistContractCreated(address indexed _artist, address _contract);
+    event ArtistContractCreated(address indexed _artist, address _contract, address[] _rightsHolders, uint[] _sharesInBPS);
 
     constructor() {
         artistImpl = address(new Artist());
     }
 
-    function createArtist(address[] memory  _recipients, uint[] memory _shares) external returns (address){
+    function createArtist(address[] memory  _rightsHolders, uint[] memory _sharesInBPS) external returns (address){
         address clone = Clones.clone(artistImpl);
-        Artist(payable(clone)).initialize(_recipients, _shares);
+        Artist(payable(clone)).initialize(_rightsHolders, _sharesInBPS);
         artistToContract[msg.sender] = clone;
-        emit ArtistContractCreated(msg.sender, clone);
+        emit ArtistContractCreated(msg.sender, clone, _rightsHolders, _sharesInBPS);
+        for(uint i=0; i < _rightsHolders.length; i++){
+                console.log("Rights holder: %s",_rightsHolders[i]);
+        }
         return clone;
     }
 }
