@@ -356,6 +356,7 @@ function App(props) {
             address={address}
             mainnetProvider={mainnetProvider}
             localProvider={localProvider}
+            userSigner={userSigner}
             tx={tx}
             writeContracts={writeContracts}
             readContracts={readContracts}

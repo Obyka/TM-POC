@@ -4,7 +4,15 @@ import React, { useState } from "react";
 import { AddressInput, Address, Balance, Events } from "../components";
 import ManageAgreements from "../components/custom/ManageAgreements";
 
-export default function TyxitAdmin({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
+export default function TyxitAdmin({
+  userSigner,
+  address,
+  mainnetProvider,
+  localProvider,
+  tx,
+  readContracts,
+  writeContracts,
+}) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {
@@ -26,6 +34,7 @@ export default function TyxitAdmin({ address, mainnetProvider, localProvider, tx
       localProvider={localProvider}
       address={address}
       tx={tx}
+      userSigner={userSigner}
       writeContracts={writeContracts}
       readContracts={readContracts}
     />

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import { useContractReader } from "eth-hooks";
 import { Button, Card, List } from "antd";
 import { AddressInput, Address, Balance, Events } from "..";
@@ -10,6 +11,7 @@ export default function ManageAgreements({
   writeContracts,
   mainnetProvider,
   localProvider,
+  userSigner,
 }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
@@ -27,8 +29,6 @@ export default function ManageAgreements({
     }
   }
 
-  //    event AgreementCreated(address[] indexed _coArtists, address _contract);
-
   let AgreementsCreatedEvents = useEventListener(
     readContracts,
     "FactoryCloneAgreement",
@@ -36,12 +36,38 @@ export default function ManageAgreements({
     localProvider,
     1,
   );
-  console.log(AgreementsCreatedEvents);
+
+  const AgreementABI = ["function cancelAgreement() public", "function getState() public view returns(uint)"];
+  const states = ["Uninitialized", "Initialized", "Sale open", "Redeemable", "Canceled"];
+
+  const agreements = new Map();
+  AgreementsCreatedEvents.forEach(elem => {
+    agreements.set(elem.transactionHash, {
+      contract: new ethers.Contract(elem.args._contract, AgreementABI, userSigner),
+      state: "",
+    });
+  });
+  const [mapState, setMapState] = useState(new Map());
+
+  /*useEffect(() => {
+    // create a interval and get the id
+    const myInterval = setInterval(() => {
+      console.log(agreements)
+      agreements.forEach((value, key) => {
+        setMapState(async (prev) => {
+          new Map(mapState.set(key, await value.contract.getState()))
+        })
+        
+      })
+    }, 5000);
+    return () => clearInterval(myInterval);
+  }, []);*/
+
   return (
     <Card title={"Ongoins agreements"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
       <List
         bordered={true}
-        itemLayout="horizontal"
+        itemLayout="vertical"
         rowKey={item => `${item.transactionHash}_${item.logIndex}`}
         dataSource={AgreementsCreatedEvents}
         renderItem={item => (
@@ -66,6 +92,32 @@ export default function ManageAgreements({
                 </>
               }
             />
+            <List.Item.Meta
+              title={<>State of the contract</>}
+              description={
+                <>{mapState.has(item.transactionHash) && states[mapState.get(item.transactionHash).toString()]}</>
+              }
+            />
+            <Button
+              onClick={async () => {
+                const contract = agreements.get(item.transactionHash).contract;
+                let tx = await contract.cancelAgreement();
+                console.log(`USER ${userSigner}`);
+              }}
+            >
+              Cancel agreement
+            </Button>
+
+            <Button
+              onClick={async () => {
+                const contract = agreements.get(item.transactionHash).contract;
+                setMapState(new Map(mapState.set(item.transactionHash, await contract.getState())));
+                let tx = await contract.getState();
+                console.log(`${tx}`);
+              }}
+            >
+              Get Status
+            </Button>
           </List.Item>
         )}
       />
