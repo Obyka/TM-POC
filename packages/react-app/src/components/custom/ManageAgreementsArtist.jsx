@@ -3,7 +3,8 @@ import { ethers } from "ethers";
 import { Button, Card, List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address } from "../";
-export default function ManageAgreements({
+
+export default function ManageAgreementsArtist({
   address,
   tx,
   readContracts,

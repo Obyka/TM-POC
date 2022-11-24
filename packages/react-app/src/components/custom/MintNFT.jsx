@@ -3,9 +3,7 @@ import React, { useState } from "react";
 import { ethers } from "ethers";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { readString } from "react-papaparse";
-
 import { create } from "ipfs-http-client";
-
 import { Address, Events } from "../";
 
 export default function MintNFT({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
@@ -81,7 +79,7 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
       {/*
        */}
       <Card title="Sample NFT contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
-        <Address address={writeContracts.SampleNFT.address} ensProvider={mainnetProvider} fontSize={15} />
+        <Address address={readContracts.SampleNFT.address} ensProvider={mainnetProvider} fontSize={15} />
         <div style={{ margin: 8 }}>
           <h3>Mint NFT</h3>
           {ipfs && (

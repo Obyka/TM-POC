@@ -88,8 +88,6 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
           style={{ marginTop: 8 }}
           onClick={async () => {
             setDeploying(true);
-            //const splittedRightHolders = rightHolders.split(",");
-            //const splittedShares = shares.split(",").map(s => parseInt(s, 10));
 
             console.log(`Right holder ${rightHolders}`);
             console.log(`Shares ${shares}`);
