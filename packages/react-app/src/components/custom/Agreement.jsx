@@ -6,6 +6,7 @@ import { Address } from "../";
 import externalContracts from "../../contracts/external_contracts";
 
 export default function Agreement({
+  admin,
   mainnetProvider,
   contractAddress,
   address,
@@ -52,13 +53,13 @@ export default function Agreement({
     let InitializedEvents = await contract.queryFilter(Initialized, 0);
 
     if (CanceledEvents.length > 0) {
-      setAgreementState("Canceled");
+      setAgreementState(States.Canceled);
     } else if (RedeemableEvents.length > 0) {
-      setAgreementState("Redeemable");
+      setAgreementState(States.Redeemable);
     } else if (ForSaleEvents.length > 0) {
-      setAgreementState("For sale");
+      setAgreementState(States.ForSale);
     } else if (InitializedEvents.length > 0) {
-      setAgreementState("Initialized");
+      setAgreementState(States.Initialized);
     }
   }
   function updateNotif(update) {
@@ -106,28 +107,32 @@ export default function Agreement({
     "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
   ];
   /*event Init();
-        event ForSale(uint _price);
-        event Purchase(address indexed _buyer, uint _value);
-        event Redeem(address indexed _artist, uint _value);
-        event Canceled(address admin);
-        event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable);
-    */
+          event ForSale(uint _price);
+          event Purchase(address indexed _buyer, uint _value);
+          event Redeem(address indexed _artist, uint _value);
+          event Canceled(address admin);
+          event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable);
+      */
 
   const contract = new ethers.Contract(contractAddress, AgreementABI, userSigner);
   contract.on("Init", () => {
     console.log("CONTRACT STATE -- INIT");
+    setAgreementState(States.Initialized);
   });
   contract.on("ForSale", _price => {
     console.log("CONTRACT STATE -- FORSALE");
+    setAgreementState(States.ForSale);
   });
   contract.on("Purchase", (_buyer, _value) => {
     console.log("CONTRACT STATE -- PURCHASE");
   });
   contract.on("Redeem", (_artist, _value) => {
     console.log("CONTRACT STATE -- REDEEM");
+    setAgreementState(States.Redeemable);
   });
   contract.on("Canceled", _admin => {
     console.log("CONTRACT STATE -- CANCELED");
+    setAgreementState(States.Canceled);
   });
   contract.on("NewVote", (_artist, _royaltiesInBps, _ownShare, _nftTier, _exploitable) => {
     console.log("CONTRACT STATE -- NEWVOTE");
@@ -140,9 +145,15 @@ export default function Agreement({
   });
 
   let agreementsAddresses = AgreementsCreatedEvents.map(elem => elem.args._contract);
-  const states = ["Uninitialized", "Initialized", "Sale open", "Redeemable", "Canceled"];
+  const States = {
+    Uninitialized: "Uninitialized",
+    Initialized: "Initialized",
+    ForSale: "Sale is open",
+    Redeemable: "Redeemable",
+    Canceled: "Canceled",
+  };
 
-  const [agreementState, setAgreementState] = useState("");
+  const [agreementState, setAgreementState] = useState(States.Uninitialized);
   const [artistsState, setArtistsState] = useState([]);
   const [artistsVoteMap, setArtistsVoteMap] = useState(new Map());
   const updateArtistsVoteMap = (k, v) => {
@@ -165,7 +176,7 @@ export default function Agreement({
     >
       {agreementsAddresses.includes(contractAddress) ? (
         <>
-          {agreementState}
+          {States[agreementState]}
           <List
             bordered={false}
             itemLayout="vertical"
@@ -196,6 +207,17 @@ export default function Agreement({
               </List.Item>
             )}
           />
+          {admin && agreementState !== States.Canceled ? (
+            <Button
+              onClick={async () => {
+                let tx = await contract.cancelAgreement();
+              }}
+            >
+              Cancel agreement
+            </Button>
+          ) : (
+            <></>
+          )}
         </>
       ) : (
         <Empty description="No agreement at this address" />

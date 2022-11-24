@@ -37,6 +37,7 @@ export default function Artist({
             readContracts={readContracts}
     />*/}
           <Agreement
+            admin={false}
             mainnetProvider={mainnetProvider}
             contractAddress={"0x611DB30a654fc657aA26E9A5d9C0C6E78d231a56"}
             localProvider={localProvider}
