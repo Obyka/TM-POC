@@ -14,29 +14,16 @@ export default function RightHolder({
   tx,
   readContracts,
   writeContracts,
+  userSigner,
 }) {
-  const rightHolderContractAddress = useContractReader(
-    readContracts,
-    "FactoryCloneRightHolder",
-    "rightHolderToContract",
-    [address],
-    1,
+  return (
+    <ManageAffiliations
+      localProvider={localProvider}
+      address={address}
+      tx={tx}
+      writeContracts={writeContracts}
+      readContracts={readContracts}
+      userSigner={userSigner}
+    />
   );
-
-  if (rightHolderContractAddress == 0) {
-    return (
-      <CreateRightHolder address={address} tx={tx} writeContracts={writeContracts} readContracts={readContracts} />
-    );
-  } else {
-    return (
-      <ManageAffiliations
-        rightHolderContractAddress={rightHolderContractAddress}
-        localProvider={localProvider}
-        address={address}
-        tx={tx}
-        writeContracts={writeContracts}
-        readContracts={readContracts}
-      />
-    );
-  }
 }

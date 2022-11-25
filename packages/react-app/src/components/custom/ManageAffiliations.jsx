@@ -3,6 +3,8 @@ import { useContractReader } from "eth-hooks";
 import { Button, Card, List } from "antd";
 import { AddressInput, Address, Balance, Events } from "../";
 import { useEventListener } from "eth-hooks/events/useEventListener";
+import Artist from "./Artist";
+import { local } from "web3modal";
 export default function ManageAffiliations({
   rightHolderContractAddress,
   address,
@@ -11,6 +13,7 @@ export default function ManageAffiliations({
   writeContracts,
   mainnetProvider,
   localProvider,
+  userSigner,
 }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
@@ -35,31 +38,29 @@ export default function ManageAffiliations({
     localProvider,
     1,
   );
+
+  let affiliations = AffiliationCreatedEvents.filter(eve => eve.args._rightsHolders.includes(address)).map(
+    affiliation => affiliation.args._contract,
+  );
+
   console.log(AffiliationCreatedEvents);
   return (
     <Card title={"Affiliated artists"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
-      <h3>Your contract address</h3>
-      <Address address={rightHolderContractAddress} ensProvider={mainnetProvider} fontSize={15} />
-
       <List
-        bordered={true}
+        bordered={false}
         itemLayout="horizontal"
         rowKey={item => `${item.transactionHash}_${item.logIndex}`}
-        dataSource={AffiliationCreatedEvents.filter(eve =>
-          eve.args._rightsHolders.includes(rightHolderContractAddress),
-        )}
+        dataSource={affiliations}
         renderItem={item => (
           <List.Item>
-            <List.Item.Meta
-              title={
-                <>
-                  Artist's contract{" "}
-                  <Address address={item.args._contract} ensProvider={mainnetProvider} fontSize={15} />
-                </>
-              }
-              description={`Your share of total revenue is: ${
-                item.args._sharesInBPS[item.args._rightsHolders.findIndex(elem => elem == rightHolderContractAddress)]
-              }%`}
+            <Artist
+              mainnetProvider={mainnetProvider}
+              contractAddress={item}
+              address={address}
+              tx={tx}
+              readContracts={readContracts}
+              localProvider={localProvider}
+              userSigner={userSigner}
             />
           </List.Item>
         )}

@@ -371,6 +371,7 @@ function App(props) {
             tx={tx}
             writeContracts={writeContracts}
             readContracts={readContracts}
+            userSigner={userSigner}
           />
         </Route>
 

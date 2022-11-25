@@ -15,7 +15,7 @@ contract FactoryCloneArtist {
 
     function createArtist(address[] memory  _rightsHolders, uint[] memory _sharesInBPS) external returns (address){
         address clone = Clones.clone(artistImpl);
-        Artist(payable(clone)).initialize(_rightsHolders, _sharesInBPS);
+        Artist(payable(clone)).initialize(msg.sender, _rightsHolders, _sharesInBPS);
         artistToContract[msg.sender] = clone;
         emit ArtistContractCreated(msg.sender, clone, _rightsHolders, _sharesInBPS);
         for(uint i=0; i < _rightsHolders.length; i++){
