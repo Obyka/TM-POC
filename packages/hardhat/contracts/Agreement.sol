@@ -82,12 +82,14 @@ contract Agreement is ERC721Holder, AccessControl {
         artistMapping[artistAddress].hasRedeem = false;
     }
 
-    function vote(uint royaltiesInBps, uint ownShare, Tier nftTier, bool exploitable) external onlyArtist{
+    function vote(uint royaltiesInBps, uint ownShareInBps, Tier nftTier, bool exploitable) external onlyArtist{
+        require(contractState == State.Initialized);
         require(royaltiesInBps <= 10000, "Royalties must not exceed 100 percent");
-        require(ownShare <= 1000, "Own share must not exceed 100 percent");
-        Vote memory currentVote = Vote(royaltiesInBps, ownShare, nftTier, exploitable);
+        require(ownShareInBps <= 10000, "Own share must not exceed 100 percent");
+        Vote memory currentVote = Vote(royaltiesInBps, ownShareInBps, nftTier, exploitable);
         artistMapping[msg.sender].proposed = true;
         artistMapping[msg.sender].vote = currentVote;
+        emit NewVote(msg.sender, royaltiesInBps, ownShareInBps, nftTier, exploitable);
 
     }
 

@@ -46,6 +46,7 @@ export default function ManageAgreements({
         dataSource={AgreementsCreatedEvents}
         renderItem={item => (
           <Agreement
+            canVote={false}
             admin={true}
             mainnetProvider={mainnetProvider}
             contractAddress={item.args._contract}

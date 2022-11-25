@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { Button, Card, List } from "antd";
+import { Button, Card, List, Collapse } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
-import { Address } from "../";
-
-export default function ManageAgreementsArtist({
+import Agreement from "./Agreement";
+import VoteForm from "./VoteForm";
+const { Panel } = Collapse;
+export default function ManageAgreementsArtists({
   address,
   tx,
   readContracts,
@@ -37,88 +38,30 @@ export default function ManageAgreementsArtist({
     1,
   );
 
-  const AgreementABI = ["function cancelAgreement() public", "function getState() public view returns(uint)"];
-  const states = ["Uninitialized", "Initialized", "Sale open", "Redeemable", "Canceled"];
-
-  const agreements = new Map();
-  AgreementsCreatedEvents.forEach(elem => {
-    agreements.set(elem.transactionHash, {
-      contract: new ethers.Contract(elem.args._contract, AgreementABI, userSigner),
-      state: "",
-    });
-  });
-  const [mapState, setMapState] = useState(new Map());
-
-  /*useEffect(() => {
-    // create a interval and get the id
-    const myInterval = setInterval(() => {
-      console.log(agreements)
-      agreements.forEach((value, key) => {
-        setMapState(async (prev) => {
-          new Map(mapState.set(key, await value.contract.getState()))
-        })
-        
-      })
-    }, 5000);
-    return () => clearInterval(myInterval);
-  }, []);*/
+  let artistAgreements = AgreementsCreatedEvents.filter(elem => elem.args._coArtists.includes(address)).map(
+    elem => elem.args._contract,
+  );
+  console.log(`Artist agreements ${JSON.stringify(artistAgreements)}`);
 
   return (
     <Card title={"Ongoins agreements"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
       <List
-        bordered={true}
+        bordered={false}
         itemLayout="vertical"
         rowKey={item => `${item.transactionHash}_${item.logIndex}`}
-        dataSource={AgreementsCreatedEvents}
+        dataSource={artistAgreements}
         renderItem={item => (
-          <List.Item>
-            <List.Item.Meta
-              title={
-                <>
-                  Agreement's address{" "}
-                  <Address address={item.args._contract} ensProvider={mainnetProvider} fontSize={15} />
-                </>
-              }
-              description={
-                <>
-                  Co-artists:{" "}
-                  <ul>
-                    {item.args._coArtists.map(artist => (
-                      <li>
-                        <Address address={artist} ensProvider={mainnetProvider} fontSize={15} />
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              }
-            />
-            <List.Item.Meta
-              title={<>State of the contract</>}
-              description={
-                <>{mapState.has(item.transactionHash) && states[mapState.get(item.transactionHash).toString()]}</>
-              }
-            />
-            <Button
-              onClick={async () => {
-                const contract = agreements.get(item.transactionHash).contract;
-                let tx = await contract.cancelAgreement();
-                console.log(`USER ${userSigner}`);
-              }}
-            >
-              Cancel agreement
-            </Button>
-
-            <Button
-              onClick={async () => {
-                const contract = agreements.get(item.transactionHash).contract;
-                setMapState(new Map(mapState.set(item.transactionHash, await contract.getState())));
-                let tx = await contract.getState();
-                console.log(`${tx}`);
-              }}
-            >
-              Get Status
-            </Button>
-          </List.Item>
+          <Agreement
+            canVote={true}
+            admin={false}
+            mainnetProvider={mainnetProvider}
+            contractAddress={item}
+            localProvider={localProvider}
+            address={address}
+            tx={tx}
+            userSigner={userSigner}
+            readContracts={readContracts}
+          />
         )}
       />
     </Card>

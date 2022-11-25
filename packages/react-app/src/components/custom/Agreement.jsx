@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { Button, Card, Empty, List } from "antd";
+import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address } from "../";
-import externalContracts from "../../contracts/external_contracts";
+import VoteForm from "./VoteForm";
 
 export default function Agreement({
+  canVote,
   admin,
   mainnetProvider,
   contractAddress,
@@ -27,7 +29,7 @@ export default function Agreement({
       updateArtistsVoteMap(artist, {
         royaltiesInBps: royaltiesInBps,
         ownShare: ownShare,
-        nftTier: nftTier,
+        nftTier: nftTier === 0 ? Tier.Silver : nftTier === 1 ? Tier.Gold : Tier.Platinium,
         exploitable: exploitable,
       });
     });
@@ -93,26 +95,19 @@ export default function Agreement({
     "event Purchase(address indexed _buyer, uint _value)",
     "event Redeem(address indexed _artist, uint _value)",
     "event Canceled(address admin)",
-    "event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable)",
+    "event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, uint8 _nftTier, bool _exploitable)",
     "function getState() public view returns(State)",
     "function cancelAgreement() public",
     "function max(uint a, uint b) internal pure returns (uint)",
     "function isArtist(address artistAddress) public view returns(bool isIndeed)",
     "function newArtist(address artistAddress) internal",
-    "function vote(uint royaltiesInBps, uint ownShare, Tier nftTier, bool exploitable) external onlyArtist",
+    "function vote(uint royaltiesInBps, uint ownShare, uint8 nftTier, bool exploitable) external onlyArtist",
     "function putForSale() external onlyArtist",
     "function purchase() external payable",
     "function redeem() onlyArtist external",
     "function sendViaCall(address payable _to, uint _value) internal",
     "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
   ];
-  /*event Init();
-          event ForSale(uint _price);
-          event Purchase(address indexed _buyer, uint _value);
-          event Redeem(address indexed _artist, uint _value);
-          event Canceled(address admin);
-          event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable);
-      */
 
   const contract = new ethers.Contract(contractAddress, AgreementABI, userSigner);
   contract.on("Init", () => {
@@ -139,7 +134,7 @@ export default function Agreement({
     updateArtistsVoteMap(_artist, {
       royaltiesInBps: _royaltiesInBps,
       ownShare: _ownShare,
-      nftTier: _nftTier,
+      nftTier: _nftTier === 0 ? Tier.Silver : _nftTier === 1 ? Tier.Gold : Tier.Platinium,
       exploitable: _exploitable,
     });
   });
@@ -151,6 +146,11 @@ export default function Agreement({
     ForSale: "Sale is open",
     Redeemable: "Redeemable",
     Canceled: "Canceled",
+  };
+  const Tier = {
+    Silver: "Silver",
+    Gold: "Gold",
+    Platinium: "Platinium",
   };
 
   const [agreementState, setAgreementState] = useState(States.Uninitialized);
@@ -195,10 +195,13 @@ export default function Agreement({
                       Has voted ? {artistsVoteMap.has(item) ? "Yes" : "No"}
                       {artistsVoteMap.has(item) && (
                         <ul>
-                          <li>Royalties: </li>
-                          <li>Own share</li>
-                          <li>NFT Tier</li>
-                          <li>Commercially exploitable</li>
+                          <li>Royalties: {artistsVoteMap.get(item).royaltiesInBps.toNumber() / 100}% </li>
+                          <li>Own share {artistsVoteMap.get(item).ownShare.toNumber() / 100}%</li>
+                          <li>NFT Tier {artistsVoteMap.get(item).nftTier}</li>
+                          <li>
+                            Commercially exploitable{" "}
+                            {artistsVoteMap.get(item).exploitable ? <CheckOutlined /> : <CloseOutlined />}
+                          </li>
                         </ul>
                       )}
                     </>
@@ -207,17 +210,18 @@ export default function Agreement({
               </List.Item>
             )}
           />
-          {admin && agreementState !== States.Canceled ? (
-            <Button
-              onClick={async () => {
-                let tx = await contract.cancelAgreement();
-              }}
-            >
-              Cancel agreement
-            </Button>
-          ) : (
-            <></>
+          {admin && agreementState !== States.Canceled && (
+            <List.Item>
+              <Button
+                onClick={async () => {
+                  let tx = await contract.cancelAgreement();
+                }}
+              >
+                Cancel agreement
+              </Button>
+            </List.Item>
           )}
+          {canVote && agreementState !== States.Canceled && <VoteForm tx={tx} agreementContract={contract} />}
         </>
       ) : (
         <Empty description="No agreement at this address" />

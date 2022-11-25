@@ -23,27 +23,17 @@ export default function Artist({
     return <CreateArtist address={address} tx={tx} writeContracts={writeContracts} readContracts={readContracts} />;
   } else {
     return (
-      <Collapse defaultActiveKey={["1"]} accordion>
+      <Collapse defaultActiveKey={["2"]} accordion>
         <Panel header="Create your agreement" key="1">
           <MintNFT address={address} tx={tx} writeContracts={writeContracts} readContracts={readContracts} />
         </Panel>
         <Panel header="Manage your agreements" key="2">
-          {/*<ManageAgreementsArtist
+          <ManageAgreementsArtist
             localProvider={localProvider}
             address={address}
             tx={tx}
             userSigner={userSigner}
             writeContracts={writeContracts}
-            readContracts={readContracts}
-    />*/}
-          <Agreement
-            admin={false}
-            mainnetProvider={mainnetProvider}
-            contractAddress={"0x611DB30a654fc657aA26E9A5d9C0C6E78d231a56"}
-            localProvider={localProvider}
-            address={address}
-            tx={tx}
-            userSigner={userSigner}
             readContracts={readContracts}
           />
         </Panel>
