@@ -1,11 +1,12 @@
 import React from "react";
 import { Button, Select, Form, Checkbox, InputNumber } from "antd";
 import { useState } from "react";
+import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
 
 const { Option } = Select;
 
-export default function VoteForm({ tx, agreementContract }) {
+export default function VoteForm({ readContracts, address, tx, agreementContract }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {
@@ -29,6 +30,7 @@ export default function VoteForm({ tx, agreementContract }) {
     console.log("Failed:", errorInfo);
   };
 
+  const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 5);
   const [royaltiesInBps, setRoyaltiesInBps] = useState(0);
   const [ownShare, setOwnShare] = useState(0);
   const [nftTier, setNftTier] = useState(1);
@@ -79,7 +81,10 @@ export default function VoteForm({ tx, agreementContract }) {
               const values = await voteForm.validateFields();
               console.log("Success:", values);
               try {
-                const result = tx(agreementContract.vote(royaltiesInBps, ownShare, nftTier, exploitable), updateNotif);
+                const result = tx(
+                  agreementContract.vote(royaltiesInBps, ownShare, nftTier, exploitable, artistContract),
+                  updateNotif,
+                );
 
                 console.log("awaiting metamask/web3 confirm result...", result);
                 console.log(await result);

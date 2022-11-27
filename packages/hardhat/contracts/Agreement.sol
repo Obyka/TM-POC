@@ -9,16 +9,28 @@ import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import "./IArtist.sol";
 
 contract Agreement is ERC721Holder, AccessControl {
-
     // Events
-    event Init(address _collectionAddress, uint256 _tokenId, address[] _artists, address _initialOwner);
+    event Init(
+        address _collectionAddress,
+        uint256 _tokenId,
+        address[] _artists,
+        address _initialOwner
+    );
     event ForSale(uint _price);
     event Purchase(address indexed _buyer, uint _value);
     event Redeem(address indexed _artist, uint _value);
     event Canceled(address admin);
-    event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable);
+    event NewVote(
+        address _artist,
+        uint _royaltiesInBps,
+        uint _ownShare,
+        Tier _nftTier,
+        bool _exploitable
+    );
 
     struct Vote {
         uint royaltiesInBps;
@@ -27,7 +39,7 @@ contract Agreement is ERC721Holder, AccessControl {
         bool exploitable;
     }
 
-    struct Artist { 
+    struct Artist {
         bool proposed;
         Vote vote;
         bool isArtist;
@@ -36,10 +48,20 @@ contract Agreement is ERC721Holder, AccessControl {
     mapping(address => Artist) public artistMapping;
     address[] public artistList;
 
-    enum State {Uninitialized, Initialized, ForSale, Redeemable, Canceled}
+    enum State {
+        Uninitialized,
+        Initialized,
+        ForSale,
+        Redeemable,
+        Canceled
+    }
     State public contractState;
 
-    enum Tier {Silver, Gold, Platinium}
+    enum Tier {
+        Silver,
+        Gold,
+        Platinium
+    }
     uint[3] tierPrice = [1, 10, 100];
     uint saleTier;
     uint sellingPrice;
@@ -51,14 +73,15 @@ contract Agreement is ERC721Holder, AccessControl {
     // Check if the NFT implements ERC2981
     bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
     bytes32 public constant TYXIT_ROLE = keccak256("TYXIT_ROLE");
-    address constant public TYXIT_ADMIN = 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc;
+    address public constant TYXIT_ADMIN =
+        0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc;
 
     modifier onlyArtist() {
         require(isArtist(msg.sender), "not artist");
         _;
     }
 
-    function getState() public view returns(State){
+    function getState() public view returns (State) {
         return contractState;
     }
 
@@ -71,8 +94,10 @@ contract Agreement is ERC721Holder, AccessControl {
         return a >= b ? a : b;
     }
 
-    function isArtist(address artistAddress) public view returns(bool isIndeed) {
-      return artistMapping[artistAddress].isArtist;
+    function isArtist(
+        address artistAddress
+    ) public view returns (bool isIndeed) {
+        return artistMapping[artistAddress].isArtist;
     }
 
     function newArtist(address artistAddress) internal {
@@ -82,24 +107,68 @@ contract Agreement is ERC721Holder, AccessControl {
         artistMapping[artistAddress].hasRedeem = false;
     }
 
-    function vote(uint royaltiesInBps, uint ownShareInBps, Tier nftTier, bool exploitable) external onlyArtist{
+    function vote(
+        uint _royaltiesInBps,
+        uint _ownShareInBps,
+        Tier _nftTier,
+        bool _exploitable,
+        address _voter
+    ) external onlyArtist {
         require(contractState == State.Initialized);
-        require(royaltiesInBps <= 10000, "Royalties must not exceed 100 percent");
-        require(ownShareInBps <= 10000, "Own share must not exceed 100 percent");
-        Vote memory currentVote = Vote(royaltiesInBps, ownShareInBps, nftTier, exploitable);
+        require(
+            _royaltiesInBps <= 10000,
+            "Royalties must not exceed 100 percent"
+        );
+        require(
+            _ownShareInBps <= 10000,
+            "Own share must not exceed 100 percent"
+        );
+        require(
+            ERC165Checker.supportsInterface(_voter, type(IArtist).interfaceId),
+            "The contract does not implement the Artist interface"
+        );
+        require(
+            IArtist(payable(_voter)).getArtistAddress() == msg.sender,
+            "Sender is not the owner of supplied voter contract"
+        );
+
+        require(
+            IArtist(payable(_voter)).checkAgreementValidity(
+                _royaltiesInBps,
+                uint(_nftTier)
+            ),
+            "Vote is not compatible with preconditions"
+        );
+        Vote memory currentVote = Vote(
+            _royaltiesInBps,
+            _ownShareInBps,
+            _nftTier,
+            _exploitable
+        );
         artistMapping[msg.sender].proposed = true;
         artistMapping[msg.sender].vote = currentVote;
-        emit NewVote(msg.sender, royaltiesInBps, ownShareInBps, nftTier, exploitable);
-
+        emit NewVote(
+            msg.sender,
+            _royaltiesInBps,
+            _ownShareInBps,
+            _nftTier,
+            _exploitable
+        );
     }
 
     function putForSale() external onlyArtist {
-        require(contractState == State.Initialized, "Contract not initialized yet");
+        require(
+            contractState == State.Initialized,
+            "Contract not initialized yet"
+        );
         // For now, an average on tier proposed is computed.
         // Round floor is used
         uint totalTier = 0;
-        for(uint i = 0; i < artistList.length; i++){
-            require(artistMapping[artistList[i]].proposed, "Every artist must propose a price");
+        for (uint i = 0; i < artistList.length; i++) {
+            require(
+                artistMapping[artistList[i]].proposed,
+                "Every artist must propose a price"
+            );
             totalTier += uint(artistMapping[artistList[i]].vote.nftTier);
         }
 
@@ -108,7 +177,12 @@ contract Agreement is ERC721Holder, AccessControl {
         emit ForSale(saleTier);
     }
 
-    function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external {
+    function initialize(
+        address _collectionAddress,
+        uint256 _tokenId,
+        address[] memory _artists,
+        address _initialOwner
+    ) external {
         require(contractState == State.Uninitialized, "Already initialized");
         _setupRole(TYXIT_ROLE, TYXIT_ADMIN);
 
@@ -138,9 +212,16 @@ contract Agreement is ERC721Holder, AccessControl {
         emit Purchase(msg.sender, msg.value);
     }
 
-    function redeem() onlyArtist external {
-        require(contractState == State.Redeemable || contractState == State.Canceled, "Can not redeem yet");
-        require(!artistMapping[msg.sender].hasRedeem, "Artist has already redeemed");
+    function redeem() external onlyArtist {
+        require(
+            contractState == State.Redeemable ||
+                contractState == State.Canceled,
+            "Can not redeem yet"
+        );
+        require(
+            !artistMapping[msg.sender].hasRedeem,
+            "Artist has already redeemed"
+        );
         artistMapping[msg.sender].hasRedeem = true;
         // TO-DO: Vérifier opération
         // uint256 toRedeem = ownersStruct[msg.sender].share * tierPrice[saleTier] / 100;
@@ -151,7 +232,7 @@ contract Agreement is ERC721Holder, AccessControl {
     }
 
     function sendViaCall(address payable _to, uint _value) internal {
-        (bool sent,) = _to.call{value: _value}("");
+        (bool sent, ) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");
     }
- }
+}

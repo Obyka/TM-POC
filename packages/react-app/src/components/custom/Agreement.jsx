@@ -101,7 +101,7 @@ export default function Agreement({
     "function max(uint a, uint b) internal pure returns (uint)",
     "function isArtist(address artistAddress) public view returns(bool isIndeed)",
     "function newArtist(address artistAddress) internal",
-    "function vote(uint royaltiesInBps, uint ownShare, uint8 nftTier, bool exploitable) external onlyArtist",
+    "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external onlyArtist",
     "function putForSale() external onlyArtist",
     "function purchase() external payable",
     "function redeem() onlyArtist external",
@@ -221,7 +221,9 @@ export default function Agreement({
               </Button>
             </List.Item>
           )}
-          {canVote && agreementState !== States.Canceled && <VoteForm tx={tx} agreementContract={contract} />}
+          {canVote && agreementState !== States.Canceled && (
+            <VoteForm readContracts={readContracts} address={address} tx={tx} agreementContract={contract} />
+          )}
         </>
       ) : (
         <Empty description="No agreement at this address" />

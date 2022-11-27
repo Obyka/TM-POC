@@ -44,6 +44,5 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     waitConfirmations: 5,
   });
   const FactoryCloneAgreement = await ethers.getContract("FactoryCloneAgreement", deployer);
-
 };
 module.exports.tags = ["SampleNFT", "Artist", "FactoryCloneArtist", "Agreement", "FactoryCloneAgreement"];

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
+import "./IArtist.sol";
 
-contract Artist is Ownable {
+contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
     struct RightsHolder {
         uint shareInBPS;
         uint balance;
@@ -15,10 +17,16 @@ contract Artist is Ownable {
     address[] public rightsHolderList;
     uint rightsHoldersSharesInBPS;
     uint artistShareInBPS;
+    uint maxPreconditionTier;
+    uint maxPreconditionRoyaltiesInBps;
 
     uint public constant basis = 10000;
 
-    event Init(address indexed _artist, address[] _rightsHolders, uint[] _sharesInBPS);
+    event Init(
+        address indexed _artist,
+        address[] _rightsHolders,
+        uint[] _sharesInBPS
+    );
     event Received(address from, uint amount);
     event Withdraw(address to, uint amount);
     event AffiliationCreated(
@@ -27,9 +35,11 @@ contract Artist is Ownable {
         uint rightsHoldersSharesInBPS
     );
 
-    function initialize(address artist, address[] memory _rightsHolders, uint[] memory _shares)
-        external
-    {
+    function initialize(
+        address _artist,
+        address[] memory _rightsHolders,
+        uint[] memory _shares
+    ) initializer external override {
         setRightsHolders(_rightsHolders, _shares);
         require(
             rightsHoldersSharesInBPS <= basis,
@@ -40,7 +50,10 @@ contract Artist is Ownable {
             artistShareInBPS + rightsHoldersSharesInBPS == basis,
             "Invalid share amount"
         );
-        emit Init(artist, _rightsHolders, _shares);
+        _registerInterface(type(IArtist).interfaceId);
+        __Ownable_init();
+        transferOwnership(_artist);
+        emit Init(_artist, _rightsHolders, _shares);
     }
 
     function setRightsHolders(
@@ -67,23 +80,32 @@ contract Artist is Ownable {
         }
     }
 
-    function isRightsHolder(address rightsHolderAddress)
-        public
-        view
-        returns (bool isIndeed)
-    {
+    function isRightsHolder(
+        address rightsHolderAddress
+    ) public view returns (bool isIndeed) {
         return rightsHolderMap[rightsHolderAddress].isRightHolder;
     }
 
-    function setPreconditions(uint _minimalRoyaltiesInBps, uint _minimalTier)
-        external
-    {
+    function setPreconditions(
+        uint _minimalRoyaltiesInBps,
+        uint _minimalTier
+    ) external override {
         require(isRightsHolder(msg.sender), "Sender is not a right holder");
         require(_minimalRoyaltiesInBps <= 10000);
         require(_minimalTier <= 2);
 
-        rightsHolderMap[msg.sender].minimalRoyaltiesInBps = _minimalRoyaltiesInBps;
+        rightsHolderMap[msg.sender]
+            .minimalRoyaltiesInBps = _minimalRoyaltiesInBps;
         rightsHolderMap[msg.sender].minimalTier = _minimalTier;
+
+        maxPreconditionRoyaltiesInBps = maxPreconditionRoyaltiesInBps <
+            _minimalRoyaltiesInBps
+            ? _minimalRoyaltiesInBps
+            : maxPreconditionRoyaltiesInBps;
+
+        maxPreconditionTier = maxPreconditionTier < _minimalTier
+            ? _minimalTier
+            : maxPreconditionTier;
     }
 
     function splitPayment(uint amount) internal {
@@ -96,12 +118,12 @@ contract Artist is Ownable {
         }
     }
 
-    receive() external payable {
+    receive() external payable override(IArtist) {
         emit Received(msg.sender, msg.value);
         splitPayment(msg.value);
     }
 
-    function withdraw() public {
+    function withdraw() public override {
         require(
             rightsHolderMap[msg.sender].balance > 0,
             "No ether to withdraw"
@@ -116,5 +138,18 @@ contract Artist is Ownable {
     function sendViaCall(address payable _to, uint _value) internal {
         (bool sent, ) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function checkAgreementValidity(
+        uint _royaltiesInBps,
+        uint _tier
+    ) external view override returns (bool isValid) {
+        return
+            _royaltiesInBps >= maxPreconditionRoyaltiesInBps &&
+            _tier >= maxPreconditionTier;
+    }
+
+    function getArtistAddress() external view override returns(address _artist){
+        return owner();
     }
 }

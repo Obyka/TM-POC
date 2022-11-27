@@ -73,6 +73,8 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
                     setShares([]);
                     throw "invalid data";
                   }
+                  console.log(`Right holder ${rightHolders}`);
+                  console.log(`Shares ${shares}`);
                 }
               } catch (e) {
                 console.log(e);

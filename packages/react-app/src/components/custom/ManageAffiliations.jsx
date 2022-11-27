@@ -39,6 +39,7 @@ export default function ManageAffiliations({
     1,
   );
 
+  console.log(`ADDRESS: ${address}`);
   let affiliations = AffiliationCreatedEvents.filter(eve => eve.args._rightsHolders.includes(address)).map(
     affiliation => affiliation.args._contract,
   );
