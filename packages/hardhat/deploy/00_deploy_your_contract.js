@@ -13,7 +13,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     from: deployer,
     log: true,
     waitConfirmations: 5,
-    args: [250, "blup", "0x27C7530049c5E20ed05964eC6c6D5299Ae0dF95A"]
+    args: ["blup"]
   });
   const SampleNFT = await ethers.getContract("SampleNFT", deployer);
 

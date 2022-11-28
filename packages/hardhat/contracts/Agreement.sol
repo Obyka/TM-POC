@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IArtist.sol";
+import "./SampleNFT.sol";
 
 contract Agreement is ERC721Holder, AccessControl {
     // Events
@@ -40,7 +41,7 @@ contract Agreement is ERC721Holder, AccessControl {
     }
 
     struct Artist {
-        bool proposed;
+        bool hasVoted;
         Vote vote;
         bool isArtist;
         bool hasRedeem;
@@ -65,6 +66,11 @@ contract Agreement is ERC721Holder, AccessControl {
     uint[3] tierPrice = [1, 10, 100];
     uint saleTier;
     uint sellingPrice;
+    uint royaltiesInBps;
+
+    // These are for checking agreement validity for each artist
+    uint maxPreconditionTier;
+    uint maxPreconditionRoyaltiesInBps;
 
     IERC721 collection;
     address collection_address;
@@ -102,7 +108,7 @@ contract Agreement is ERC721Holder, AccessControl {
 
     function newArtist(address artistAddress) internal {
         require(!isArtist(artistAddress));
-        artistMapping[artistAddress].proposed = false;
+        artistMapping[artistAddress].hasVoted = false;
         artistMapping[artistAddress].isArtist = true;
         artistMapping[artistAddress].hasRedeem = false;
     }
@@ -132,21 +138,37 @@ contract Agreement is ERC721Holder, AccessControl {
             "Sender is not the owner of supplied voter contract"
         );
 
+        (uint currPreconditionRoyalties, uint currPreconditionTier) = IArtist(
+            payable(_voter)
+        ).getPreconditions();
+
         require(
-            IArtist(payable(_voter)).checkAgreementValidity(
+            checkVoteValidity(
+                uint(_nftTier),
                 _royaltiesInBps,
-                uint(_nftTier)
+                currPreconditionTier,
+                currPreconditionRoyalties
             ),
             "Vote is not compatible with preconditions"
         );
+
+        // Setting the contract-wide strictest precondition
+
+        maxPreconditionRoyaltiesInBps = max(
+            maxPreconditionRoyaltiesInBps,
+            currPreconditionRoyalties
+        );
+        maxPreconditionTier = max(maxPreconditionTier, currPreconditionTier);
+
         Vote memory currentVote = Vote(
             _royaltiesInBps,
             _ownShareInBps,
             _nftTier,
             _exploitable
         );
-        artistMapping[msg.sender].proposed = true;
+        artistMapping[msg.sender].hasVoted = true;
         artistMapping[msg.sender].vote = currentVote;
+
         emit NewVote(
             msg.sender,
             _royaltiesInBps,
@@ -156,24 +178,59 @@ contract Agreement is ERC721Holder, AccessControl {
         );
     }
 
+    function checkVoteValidity(
+        uint _votedTier,
+        uint _votedRoyalty,
+        uint tierPrecondition,
+        uint royaltyPrecondition
+    ) internal pure returns (bool isValid) {
+        return
+            _votedTier >= tierPrecondition &&
+            _votedRoyalty >= royaltyPrecondition;
+    }
+
+    //  uint _royaltiesInBps : Floor average is computed for now
+    //  uint _ownShareInBps : Total share should not exceed 10000 bps
+    //  Tier _nftTier : Floor average is computed for now
+    //  bool _exploitable: Only true if all artists agree
     function putForSale() external onlyArtist {
         require(
             contractState == State.Initialized,
             "Contract not initialized yet"
         );
-        // For now, an average on tier proposed is computed.
-        // Round floor is used
+
         uint totalTier = 0;
+        uint totalShareInBps = 0;
+
         for (uint i = 0; i < artistList.length; i++) {
             require(
-                artistMapping[artistList[i]].proposed,
-                "Every artist must propose a price"
+                artistMapping[artistList[i]].hasVoted,
+                "Every artist must vote"
             );
             totalTier += uint(artistMapping[artistList[i]].vote.nftTier);
+            totalShareInBps += uint(artistMapping[artistList[i]].vote.ownShare);
         }
 
         contractState = State.ForSale;
+
         saleTier = uint(totalTier / artistList.length);
+        royaltiesInBps = uint(totalShareInBps / artistList.length);
+
+        require(
+            checkVoteValidity(
+                saleTier,
+                royaltiesInBps,
+                maxPreconditionTier,
+                maxPreconditionRoyaltiesInBps
+            ),
+            "Resulting agreement terms do not respect every preconditions"
+        );
+
+        SampleNFT(collection_address).setTokenRoyalty(
+            tokenId,
+            address(this),
+            uint96(royaltiesInBps)
+        );
         emit ForSale(saleTier);
     }
 

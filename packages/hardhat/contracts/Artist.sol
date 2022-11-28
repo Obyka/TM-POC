@@ -140,14 +140,10 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         require(sent, "Failed to send Ether");
     }
 
-    function checkAgreementValidity(
-        uint _royaltiesInBps,
-        uint _tier
-    ) external view override returns (bool isValid) {
-        return
-            _royaltiesInBps >= maxPreconditionRoyaltiesInBps &&
-            _tier >= maxPreconditionTier;
+    function getPreconditions() external view override returns(uint _minimalRoyaltiesInBps, uint _minimalTier){
+        return (maxPreconditionRoyaltiesInBps, maxPreconditionTier);
     }
+
 
     function getArtistAddress() external view override returns(address _artist){
         return owner();

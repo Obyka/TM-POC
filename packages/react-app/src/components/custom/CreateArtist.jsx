@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useContractReader } from "eth-hooks";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { Button, Form, Card, Divider, Input, Slider, Spin, Switch, Upload } from "antd";
@@ -28,6 +28,10 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   const [shares, setShares] = useState([100]);
   const [deploying, setDeploying] = useState(false);
   const [validData, setValidData] = useState(false);
+  useEffect(() => {
+    console.log(`Shares: ${shares}`);
+    console.log(`rightHolders: ${rightHolders}`);
+  }, [shares, rightHolders]);
 
   return (
     <Card title="Create your adhesion contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
@@ -49,32 +53,29 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
               setShares([]);
               setRightHolders([]);
               const results = readString(event.target.value, { dynamicTyping: true });
-
+              console.log(`String: ${event.target.value}`);
               try {
                 if (results.data) {
-                  results.data.map(currentLine => {
+                  results.data.forEach(currentLine => {
                     if (
                       currentLine[0] === address ||
                       !ethers.utils.isAddress(currentLine[0]) ||
                       typeof currentLine[1] !== "number" ||
-                      currentLine[1] > 100
+                      currentLine[1] > 100 ||
+                      currentLine.length != 2
                     ) {
                       setValidData(false);
                     } else {
                       setValidData(true);
-                      setRightHolders(prev => [...prev, currentLine[0]]);
-                      setShares(prev => [...prev, currentLine[1]]);
                     }
-                    return currentLine;
                   });
 
                   if (!validData) {
-                    setRightHolders([]);
-                    setShares([]);
                     throw "invalid data";
+                  } else {
+                    setRightHolders(results.data.map(current => current[0]));
+                    setShares(results.data.map(current => current[1]));
                   }
-                  console.log(`Right holder ${rightHolders}`);
-                  console.log(`Shares ${shares}`);
                 }
               } catch (e) {
                 console.log(e);

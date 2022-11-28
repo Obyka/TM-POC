@@ -1,31 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract SampleNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
+contract SampleNFT is ERC2981, ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    uint royaltiesInBps;
     address royaltiesReceiver; 
     // To ensure OpenZepplin can read royalties infos
     string public contractURI;
 
-    constructor(uint96 _royaltiesInBps, string memory _contractURI, address _royaltiesReceiver) ERC721("MyToken", "MTK") 
+    constructor(string memory _contractURI) ERC721("Tyxit", "TYX") 
     {
-        royaltiesInBps = _royaltiesInBps;
         contractURI = _contractURI;
-        royaltiesReceiver = _royaltiesReceiver;
     }
 
-    function computeRoyalties(uint _salePrice) view public returns(uint256){
-        return _salePrice / 10000 * royaltiesInBps;
-    }
 
     function safeMint(address to, string memory uri)
         public
@@ -60,32 +55,15 @@ contract SampleNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         return super.tokenURI(tokenId);
     }
 
-    function royaltyInfo(
-        uint256 _tokenId,
-        uint256 _salePrice
-    ) external view returns (
-        address receiver,
-        uint256 royaltyAmount
-    ){
-        _tokenId++;
-        return (royaltiesReceiver, computeRoyalties(_salePrice));
-    }
-
-    function setRoyaltyInfo(address _newReceiver, uint _newRoyaltiesInBps) public onlyOwner{
-        royaltiesInBps = _newRoyaltiesInBps;
-        royaltiesReceiver = _newReceiver;
-    }
-
     function setContractURI(string calldata _contractURI) public onlyOwner{
         contractURI = _contractURI;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
-        return interfaceId == 0x2a55205a || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC2981, ERC721, ERC721Enumerable) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
+    function setTokenRoyalty(uint tokenId, address receiver, uint96 feeNumerator) external{
+        super._setTokenRoyalty(tokenId, receiver, feeNumerator);
     }
 }
