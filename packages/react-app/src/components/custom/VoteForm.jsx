@@ -100,6 +100,23 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
           Cast a vote
         </Button>
       </Form.Item>
+      <Form.Item>
+        <Button
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            try {
+              const result = tx(agreementContract.putForSale(), updateNotif);
+
+              console.log("awaiting metamask/web3 confirm result...", result);
+              console.log(await result);
+            } catch (e) {
+              console.log(e);
+            }
+          }}
+        >
+          Open the sale
+        </Button>
+      </Form.Item>
     </Form>
   );
 }

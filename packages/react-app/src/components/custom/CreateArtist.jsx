@@ -38,7 +38,7 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   return (
     <Card title="Create your adhesion contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
       <Address address={writeContracts.FactoryCloneArtist.address} ensProvider={mainnetProvider} fontSize={15} />
-      <Form form={createForm} layout="vertical">
+      <Form form={createForm} layout="vertical" style={{ marginTop: 10 }}>
         <Form.List name="rightsHolders">
           {(fields, { add, remove }) => (
             <>
