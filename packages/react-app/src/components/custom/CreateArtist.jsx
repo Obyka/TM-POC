@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useContractReader } from "eth-hooks";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { Button, Form, Card, Divider, Input, Slider, Spin, Switch, Upload } from "antd";
+import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Form, Card, Space, Input, Slider, Spin, Switch, Upload, InputNumber } from "antd";
 import { AddressInput, Address, Balance, Events } from "../";
 import { readString } from "react-papaparse";
 import { ethers } from "ethers";
@@ -28,6 +28,8 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   const [shares, setShares] = useState([100]);
   const [deploying, setDeploying] = useState(false);
   const [validData, setValidData] = useState(false);
+  const [createForm] = Form.useForm();
+
   useEffect(() => {
     console.log(`Shares: ${shares}`);
     console.log(`rightHolders: ${rightHolders}`);
@@ -36,73 +38,87 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   return (
     <Card title="Create your adhesion contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
       <Address address={writeContracts.FactoryCloneArtist.address} ensProvider={mainnetProvider} fontSize={15} />
-      <Form layout="vertical">
-        <Form.Item
-          label="Right holders and their shares"
-          name="rightholders"
-          style={{ margin: 0 }}
-          tooltip={{
-            title:
-              "Enter each right holder (yourself excepted) as a separate row, with their address and their shares in percent",
-            icon: <InfoCircleOutlined />,
-          }}
-        >
-          <Input.TextArea
-            placeholder={`0xaddress,amount\n0xaddress,amount\n0xaddress,amount`}
-            onChange={event => {
-              setShares([]);
-              setRightHolders([]);
-              const results = readString(event.target.value, { dynamicTyping: true });
-              console.log(`String: ${event.target.value}`);
-              try {
-                if (results.data) {
-                  results.data.forEach(currentLine => {
-                    if (
-                      currentLine[0] === address ||
-                      !ethers.utils.isAddress(currentLine[0]) ||
-                      typeof currentLine[1] !== "number" ||
-                      currentLine[1] > 100 ||
-                      currentLine.length != 2
-                    ) {
-                      setValidData(false);
-                    } else {
-                      setValidData(true);
-                    }
-                  });
-
-                  if (!validData) {
-                    throw "invalid data";
-                  } else {
-                    setRightHolders(results.data.map(current => current[0]));
-                    setShares(results.data.map(current => current[1]));
-                  }
-                }
-              } catch (e) {
-                console.log(e);
-              }
-            }}
-            rows={4}
-          />
-        </Form.Item>
+      <Form form={createForm} layout="vertical">
+        <Form.List name="rightsHolders">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map(({ key, name, ...restField }) => (
+                <Space
+                  key={key}
+                  style={{
+                    display: "flex",
+                    marginBottom: 8,
+                  }}
+                  align="baseline"
+                >
+                  <Form.Item
+                    {...restField}
+                    name={[name, "address"]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Missing rights holders address",
+                      },
+                    ]}
+                  >
+                    <Input
+                      onChange={e => {
+                        if (!ethers.utils.isAddress(e.target.value)) {
+                          setValidData(false);
+                        } else {
+                          setValidData(true);
+                        }
+                      }}
+                      placeholder="Address"
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    {...restField}
+                    name={[name, "share"]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Missing share",
+                      },
+                    ]}
+                  >
+                    <InputNumber placeholder="Shares in %" min={1} max={100} />
+                  </Form.Item>
+                  <MinusCircleOutlined onClick={() => remove(name)} />
+                </Space>
+              ))}
+              <Form.Item>
+                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                  Add field
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
 
         <Button
           disabled={!validData}
           loading={deploying}
           style={{ marginTop: 8 }}
           onClick={async () => {
-            setDeploying(true);
-
-            console.log(`Right holder ${rightHolders}`);
-            console.log(`Shares ${shares}`);
-            shares.map(share => share * 100);
             try {
-              const result = tx(writeContracts.FactoryCloneArtist.createArtist(rightHolders, shares), updateNotif);
+              const valid = await createForm.validateFields();
+              const values = createForm.getFieldsValue();
+              setRightHolders(values.rightsHolders.map(elem => elem.address));
+              setShares(values.rightsHolders.map(elem => elem.share * 100));
+              try {
+                const result = tx(writeContracts.FactoryCloneArtist.createArtist(rightHolders, shares), updateNotif);
 
-              console.log("awaiting metamask/web3 confirm result...", result);
-              console.log(await result);
+                console.log("awaiting metamask/web3 confirm result...", result);
+                console.log(await result);
+                //setDeploying(true);
+              } catch (e) {
+                setDeploying(false);
+                console.log(e);
+              }
             } catch (e) {
+              console.log(`Error`);
               setDeploying(false);
-              console.log(e);
             }
           }}
         >
