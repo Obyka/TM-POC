@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 
 const { Option } = Select;
 
-export default function VoteForm({ readContracts, address, tx, agreementContract }) {
+export default function VoteForm({ readContracts, address, tx, agreementContract, agreementState }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {

@@ -63,7 +63,7 @@ contract Agreement is ERC721Holder, AccessControl {
         Gold,
         Platinium
     }
-    uint[3] tierPrice = [1, 10, 100];
+    uint[3] tierPrice = [0.1 ether, 0.2 ether, 0.4 ether];
     uint saleTier;
     uint sellingPrice;
     uint royaltiesInBps;
@@ -231,7 +231,7 @@ contract Agreement is ERC721Holder, AccessControl {
             address(this),
             uint96(royaltiesInBps)
         );
-        emit ForSale(saleTier);
+        emit ForSale(tierPrice[saleTier]);
     }
 
     function initialize(

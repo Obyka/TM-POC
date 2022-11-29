@@ -6,6 +6,24 @@ import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address } from "../";
 import VoteForm from "./VoteForm";
 
+export const AgreementABI = [
+  "event Init(address _collectionAddress, uint256 _tokenId, address[] _artists, address _initialOwner)",
+  "event TierProposition(address indexed _artist, uint _value)",
+  "event ForSale(uint _price)",
+  "event Purchase(address indexed _buyer, uint _value)",
+  "event Redeem(address indexed _artist, uint _value)",
+  "event Canceled(address admin)",
+  "event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, uint8 _nftTier, bool _exploitable)",
+  "function getState() public view returns(State)",
+  "function cancelAgreement() public",
+  "function isArtist(address artistAddress) public view returns(bool isIndeed)",
+  "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external",
+  "function putForSale() external",
+  "function purchase() external payable",
+  "function redeem() external",
+  "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
+];
+
 export default function Agreement({
   canVote,
   admin,
@@ -46,17 +64,21 @@ export default function Agreement({
   async function deriveStateFromEvents() {
     let Initialized = contract.filters.Init();
     let ForSale = contract.filters.ForSale();
+    let Purchase = contract.filters.Purchase();
     let Redeemable = contract.filters.Redeem();
     let Canceled = contract.filters.Canceled();
 
     let CanceledEvents = await contract.queryFilter(Canceled, 0);
     let RedeemableEvents = await contract.queryFilter(Redeemable, 0);
+    let PurchaseEvents = await contract.queryFilter(Purchase, 0);
     let ForSaleEvents = await contract.queryFilter(ForSale, 0);
     let InitializedEvents = await contract.queryFilter(Initialized, 0);
 
     if (CanceledEvents.length > 0) {
       setAgreementState(States.Canceled);
     } else if (RedeemableEvents.length > 0) {
+      setAgreementState(States.Redeemable);
+    } else if (PurchaseEvents.length > 0) {
       setAgreementState(States.Redeemable);
     } else if (ForSaleEvents.length > 0) {
       setAgreementState(States.ForSale);
@@ -88,56 +110,7 @@ export default function Agreement({
     1,
   );
 
-  const AgreementABI = [
-    "event Init(address _collectionAddress, uint256 _tokenId, address[] _artists, address _initialOwner)",
-    "event TierProposition(address indexed _artist, uint _value)",
-    "event ForSale(uint _price)",
-    "event Purchase(address indexed _buyer, uint _value)",
-    "event Redeem(address indexed _artist, uint _value)",
-    "event Canceled(address admin)",
-    "event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, uint8 _nftTier, bool _exploitable)",
-    "function getState() public view returns(State)",
-    "function cancelAgreement() public",
-    "function max(uint a, uint b) internal pure returns (uint)",
-    "function isArtist(address artistAddress) public view returns(bool isIndeed)",
-    "function newArtist(address artistAddress) internal",
-    "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external onlyArtist",
-    "function putForSale() external onlyArtist",
-    "function purchase() external payable",
-    "function redeem() onlyArtist external",
-    "function sendViaCall(address payable _to, uint _value) internal",
-    "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
-  ];
-
   const contract = new ethers.Contract(contractAddress, AgreementABI, userSigner);
-  contract.on("Init", () => {
-    console.log("CONTRACT STATE -- INIT");
-    setAgreementState(States.Initialized);
-  });
-  contract.on("ForSale", _price => {
-    console.log("CONTRACT STATE -- FORSALE");
-    setAgreementState(States.ForSale);
-  });
-  contract.on("Purchase", (_buyer, _value) => {
-    console.log("CONTRACT STATE -- PURCHASE");
-  });
-  contract.on("Redeem", (_artist, _value) => {
-    console.log("CONTRACT STATE -- REDEEM");
-    setAgreementState(States.Redeemable);
-  });
-  contract.on("Canceled", _admin => {
-    console.log("CONTRACT STATE -- CANCELED");
-    setAgreementState(States.Canceled);
-  });
-  contract.on("NewVote", (_artist, _royaltiesInBps, _ownShare, _nftTier, _exploitable) => {
-    console.log("CONTRACT STATE -- NEWVOTE");
-    updateArtistsVoteMap(_artist, {
-      royaltiesInBps: _royaltiesInBps,
-      ownShare: _ownShare,
-      nftTier: _nftTier === 0 ? Tier.Silver : _nftTier === 1 ? Tier.Gold : Tier.Platinium,
-      exploitable: _exploitable,
-    });
-  });
 
   let agreementsAddresses = AgreementsCreatedEvents.map(elem => elem.args._contract);
   const States = {
@@ -164,6 +137,39 @@ export default function Agreement({
     deriveArtistsFromEvents();
     deriveStateFromEvents();
     deriveVoteFromEvents();
+
+    contract.on("Init", () => {
+      console.log("CONTRACT STATE -- INIT");
+      setAgreementState(States.Initialized);
+    });
+    contract.on("ForSale", _price => {
+      console.log("CONTRACT STATE -- FORSALE");
+      setAgreementState(States.ForSale);
+    });
+    contract.on("Purchase", (_buyer, _value) => {
+      console.log("CONTRACT STATE -- PURCHASE");
+      setAgreementState(States.Redeemable);
+    });
+    contract.on("Redeem", (_artist, _value) => {
+      console.log("CONTRACT STATE -- REDEEM");
+      setAgreementState(States.Redeemable);
+    });
+    contract.on("Canceled", _admin => {
+      console.log("CONTRACT STATE -- CANCELED");
+      setAgreementState(States.Canceled);
+    });
+    contract.on("NewVote", (_artist, _royaltiesInBps, _ownShare, _nftTier, _exploitable) => {
+      console.log("CONTRACT STATE -- NEWVOTE");
+      updateArtistsVoteMap(_artist, {
+        royaltiesInBps: _royaltiesInBps,
+        ownShare: _ownShare,
+        nftTier: _nftTier === 0 ? Tier.Silver : _nftTier === 1 ? Tier.Gold : Tier.Platinium,
+        exploitable: _exploitable,
+      });
+    });
+    return () => {
+      contract.removeAllListeners();
+    };
   }, []);
   return (
     <Card

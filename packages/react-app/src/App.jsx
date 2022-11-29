@@ -377,6 +377,7 @@ function App(props) {
 
         <Route path="/nftbuyer">
           <NFTBuyer
+            userSigner={userSigner}
             address={address}
             mainnetProvider={mainnetProvider}
             localProvider={localProvider}

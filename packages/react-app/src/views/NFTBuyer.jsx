@@ -2,8 +2,17 @@ import { Button, Divider } from "antd";
 import React, { useState } from "react";
 
 import { AddressInput, Address, Balance, Events } from "../components";
+import ListSales from "../components/custom/ListSales";
 
-export default function NFTBuyer({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
+export default function NFTBuyer({
+  address,
+  mainnetProvider,
+  localProvider,
+  tx,
+  readContracts,
+  writeContracts,
+  userSigner,
+}) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {
@@ -21,10 +30,14 @@ export default function NFTBuyer({ address, mainnetProvider, localProvider, tx, 
   }
 
   return (
-    <div>
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-        <h2>Current sales:</h2>
-      </div>
-    </div>
+    <ListSales
+      address={address}
+      tx={tx}
+      readContracts={readContracts}
+      writeContracts={writeContracts}
+      mainnetProvider={mainnetProvider}
+      localProvider={localProvider}
+      userSigner={userSigner}
+    />
   );
 }
