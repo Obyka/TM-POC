@@ -5,7 +5,7 @@ import { AddressInput, Address, Balance, Events } from "../components";
 import CreateArtist from "../components/custom/CreateArtist";
 import MintNFT from "../components/custom/MintNFT";
 import ManageAgreementsArtist from "../components/custom/ManageAgreementsArtist";
-import Agreement from "../components/custom/Agreement";
+import ManageAdhesion from "../components/custom/ManageAdhesion";
 const { Panel } = Collapse;
 export default function Artist({
   userSigner,
@@ -35,6 +35,16 @@ export default function Artist({
             userSigner={userSigner}
             writeContracts={writeContracts}
             readContracts={readContracts}
+          />
+        </Panel>
+        <Panel header="Manage your adhesion contract" key="3">
+          <ManageAdhesion
+            localProvider={localProvider}
+            address={address}
+            tx={tx}
+            writeContracts={writeContracts}
+            readContracts={readContracts}
+            userSigner={userSigner}
           />
         </Panel>
       </Collapse>

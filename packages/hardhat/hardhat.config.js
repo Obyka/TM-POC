@@ -283,6 +283,24 @@ module.exports = {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
     },
+    rightsholder1: {
+      default: 0
+    },
+    rightsholder2: {
+      default: 1
+    },
+    artist1: {
+      default: 2
+    },
+    artist2: {
+      default: 3
+    },
+    buyer1: {
+      default: 4
+    },
+    admin1: {
+      default: 5
+    },
   },
   etherscan: {
     apiKey: {

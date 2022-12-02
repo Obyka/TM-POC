@@ -4,7 +4,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 import "./IArtist.sol";
 
-contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
+contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
     struct RightsHolder {
         uint shareInBPS;
         uint balance;
@@ -39,17 +39,8 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
         address _artist,
         address[] memory _rightsHolders,
         uint[] memory _shares
-    ) initializer external override {
-        setRightsHolders(_rightsHolders, _shares);
-        require(
-            rightsHoldersSharesInBPS <= basis,
-            "Sum of shares is greater than 100%"
-        );
-        artistShareInBPS = basis - rightsHoldersSharesInBPS;
-        require(
-            artistShareInBPS + rightsHoldersSharesInBPS == basis,
-            "Invalid share amount"
-        );
+    ) external override initializer {
+        setRightsHolders(_rightsHolders, _shares, _artist);
         _registerInterface(type(IArtist).interfaceId);
         __Ownable_init();
         __ERC165Storage_init();
@@ -59,7 +50,8 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
 
     function setRightsHolders(
         address[] memory _rightsHolders,
-        uint[] memory _shares
+        uint[] memory _shares,
+        address _artist
     ) internal {
         for (uint i = 0; i < _rightsHolders.length; i++) {
             address rightsHolder = _rightsHolders[i];
@@ -71,14 +63,26 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
             rightsHoldersSharesInBPS += share;
 
             rightsHolderMap[rightsHolder].shareInBPS = share;
-            rightsHolderMap[rightsHolder].balance = 0;
-            rightsHolderMap[rightsHolder].minimalTier = 0;
-            rightsHolderMap[rightsHolder].minimalRoyaltiesInBps = 0;
             rightsHolderMap[rightsHolder].isRightHolder = true;
 
             rightsHolderList.push(rightsHolder);
             emit AffiliationCreated(address(this), rightsHolder, share);
         }
+
+        require(
+            rightsHoldersSharesInBPS <= basis,
+            "Sum of shares is greater than 100%"
+        );
+        artistShareInBPS = basis - rightsHoldersSharesInBPS;
+        require(
+            artistShareInBPS + rightsHoldersSharesInBPS == basis,
+            "Invalid share amount"
+        );
+
+        rightsHolderMap[_artist].shareInBPS = artistShareInBPS;
+        rightsHolderMap[_artist].isRightHolder = true;
+        rightsHolderList.push(_artist);
+        emit AffiliationCreated(address(this), _artist, artistShareInBPS);
     }
 
     function isRightsHolder(
@@ -141,12 +145,21 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
         require(sent, "Failed to send Ether");
     }
 
-    function getPreconditions() external view override returns(uint _minimalRoyaltiesInBps, uint _minimalTier){
+    function getPreconditions()
+        external
+        view
+        override
+        returns (uint _minimalRoyaltiesInBps, uint _minimalTier)
+    {
         return (maxPreconditionRoyaltiesInBps, maxPreconditionTier);
     }
 
-
-    function getArtistAddress() external view override returns(address _artist){
+    function getArtistAddress()
+        external
+        view
+        override
+        returns (address _artist)
+    {
         return owner();
     }
 }

@@ -6,7 +6,19 @@ import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address } from "../";
 import VoteForm from "./VoteForm";
 import PreconditionsForm from "./PreconditionsForm";
-
+export const ArtistABI = [
+  "event Init(address indexed _artist, address[] _rightsHolders, uint[] _sharesInBPS)",
+  "event Received(address from, uint amount)",
+  "event Withdraw(address to, uint amount)",
+  "function initialize(address[] memory _rightsHolders, uint[] memory _shares) external",
+  "function setRightsHolders(address[] memory _rightsHolders, uint[] memory _shares) internal",
+  "function isRightsHolder(address rightsHolderAddress) public view returns (bool isIndeed)",
+  "function setPreconditions(uint _minimalRoyaltiesInBps, uint _minimalTier) external",
+  "function splitPayment(uint amount) internal",
+  "function withdraw() public",
+  "function sendViaCall(address payable _to, uint _value) internal",
+  "event AffiliationCreated(address artistContract, address rightHolderContract, uint rightsHoldersSharesInBPS)",
+];
 export default function Artist({
   mainnetProvider,
   contractAddress,
@@ -62,20 +74,6 @@ export default function Artist({
   );
 
   let artistsAddresses = ArtistCreatedEvents.map(elem => elem.args._contract);
-
-  const ArtistABI = [
-    "event Init(address indexed _artist, address[] _rightsHolders, uint[] _sharesInBPS)",
-    "event Received(address from, uint amount)",
-    "event Withdraw(address to, uint amount)",
-    "function initialize(address[] memory _rightsHolders, uint[] memory _shares) external",
-    "function setRightsHolders(address[] memory _rightsHolders, uint[] memory _shares) internal",
-    "function isRightsHolder(address rightsHolderAddress) public view returns (bool isIndeed)",
-    "function setPreconditions(uint _minimalRoyaltiesInBps, uint _minimalTier) external",
-    "function splitPayment(uint amount) internal",
-    "function withdraw() public",
-    "function sendViaCall(address payable _to, uint _value) internal",
-    "event AffiliationCreated(address artistContract, address rightHolderContract, uint rightsHoldersSharesInBPS)",
-  ];
 
   const contract = new ethers.Contract(contractAddress, ArtistABI, userSigner);
 
