@@ -3,6 +3,7 @@ import { Button, Select, Form, Checkbox, InputNumber } from "antd";
 import { useState } from "react";
 import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
+import { States } from "./Agreement";
 
 const { Option } = Select;
 
@@ -74,48 +75,67 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
         </Checkbox>
       </Form.Item>
       <Form.Item>
-        <Button
-          style={{ marginTop: 8 }}
-          onClick={async () => {
-            try {
-              const values = await voteForm.validateFields();
-              console.log("Success:", values);
+        {agreementState == States.Initialized && (
+          <>
+            <Button
+              style={{ marginTop: 8 }}
+              onClick={async () => {
+                try {
+                  const values = await voteForm.validateFields();
+                  console.log("Success:", values);
+                  try {
+                    const result = tx(
+                      agreementContract.vote(royaltiesInBps, ownShare, nftTier, exploitable, artistContract),
+                      updateNotif,
+                    );
+
+                    console.log("awaiting metamask/web3 confirm result...", result);
+                    console.log(await result);
+                  } catch (e) {
+                    console.log(e);
+                  }
+                } catch (errorInfo) {
+                  console.log("Failed:", errorInfo);
+                }
+                console.log(`${typeof nftTier} with value ${nftTier}`);
+              }}
+            >
+              Cast a vote
+            </Button>
+            <Button
+              style={{ marginTop: 8 }}
+              onClick={async () => {
+                try {
+                  const result = tx(agreementContract.putForSale(), updateNotif);
+
+                  console.log("awaiting metamask/web3 confirm result...", result);
+                  console.log(await result);
+                } catch (e) {
+                  console.log(e);
+                }
+              }}
+            >
+              Open the sale
+            </Button>
+          </>
+        )}
+        {(agreementState == States.Redeemable || agreementState == States.Canceled) && (
+          <Button
+            style={{ marginTop: 8 }}
+            onClick={async () => {
               try {
-                const result = tx(
-                  agreementContract.vote(royaltiesInBps, ownShare, nftTier, exploitable, artistContract),
-                  updateNotif,
-                );
+                const result = tx(agreementContract.redeem(), updateNotif);
 
                 console.log("awaiting metamask/web3 confirm result...", result);
                 console.log(await result);
               } catch (e) {
                 console.log(e);
               }
-            } catch (errorInfo) {
-              console.log("Failed:", errorInfo);
-            }
-            console.log(`${typeof nftTier} with value ${nftTier}`);
-          }}
-        >
-          Cast a vote
-        </Button>
-      </Form.Item>
-      <Form.Item>
-        <Button
-          style={{ marginTop: 8 }}
-          onClick={async () => {
-            try {
-              const result = tx(agreementContract.putForSale(), updateNotif);
-
-              console.log("awaiting metamask/web3 confirm result...", result);
-              console.log(await result);
-            } catch (e) {
-              console.log(e);
-            }
-          }}
-        >
-          Open the sale
-        </Button>
+            }}
+          >
+            Redeem your benefits
+          </Button>
+        )}
       </Form.Item>
     </Form>
   );

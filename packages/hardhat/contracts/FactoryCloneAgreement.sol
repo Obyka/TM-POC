@@ -22,8 +22,8 @@ contract FactoryCloneAgreement {
         console.log("Deployer %s",msg.sender);
         console.log("Agreement impl %s",agreementImpl);
 
-
-        Agreement(clone).initialize(_collection_address, _tokenId, _artists, msg.sender);
+        uint64[3] memory tierPrice = [0.1 ether, 0.2 ether, 0.4 ether];
+        Agreement(clone).initialize(_collection_address, _tokenId, _artists, msg.sender, tierPrice);
         agreementToContract[msg.sender] = clone;
         emit AgreementCreated(_artists, clone);
         console.log("Event emitted");

@@ -1,8 +1,9 @@
-import { Button, Divider } from "antd";
+import { Button, Divider, Collapse } from "antd";
 import React, { useState } from "react";
-
 import { AddressInput, Address, Balance, Events } from "../components";
 import ListSales from "../components/custom/ListSales";
+import ListOwnedNFTs from "../components/custom/ListOwnedNFTs";
+const { Panel } = Collapse;
 
 export default function NFTBuyer({
   address,
@@ -30,14 +31,29 @@ export default function NFTBuyer({
   }
 
   return (
-    <ListSales
-      address={address}
-      tx={tx}
-      readContracts={readContracts}
-      writeContracts={writeContracts}
-      mainnetProvider={mainnetProvider}
-      localProvider={localProvider}
-      userSigner={userSigner}
-    />
+    <Collapse defaultActiveKey={["2"]} accordion>
+      <Panel header="Listed NFTs" key="1">
+        <ListSales
+          address={address}
+          tx={tx}
+          readContracts={readContracts}
+          writeContracts={writeContracts}
+          mainnetProvider={mainnetProvider}
+          localProvider={localProvider}
+          userSigner={userSigner}
+        />
+      </Panel>
+      <Panel header="Owned NFTs" key="2">
+        <ListOwnedNFTs
+          address={address}
+          tx={tx}
+          readContracts={readContracts}
+          writeContracts={writeContracts}
+          mainnetProvider={mainnetProvider}
+          localProvider={localProvider}
+          userSigner={userSigner}
+        />
+      </Panel>
+    </Collapse>
   );
 }

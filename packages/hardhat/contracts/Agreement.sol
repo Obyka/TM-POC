@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IArtist.sol";
 import "./SampleNFT.sol";
+import "hardhat/console.sol";
 
 contract Agreement is ERC721Holder, AccessControl {
     // Events
@@ -63,7 +64,7 @@ contract Agreement is ERC721Holder, AccessControl {
         Gold,
         Platinium
     }
-    uint[3] tierPrice = [0.1 ether, 0.2 ether, 0.4 ether];
+    uint64[3] tierPrice;
     uint saleTier;
     uint sellingPrice;
     uint royaltiesInBps;
@@ -201,6 +202,7 @@ contract Agreement is ERC721Holder, AccessControl {
 
         uint totalTier = 0;
         uint totalShareInBps = 0;
+        uint totalRoyaltiesInBps = 0;
 
         for (uint i = 0; i < artistList.length; i++) {
             require(
@@ -209,12 +211,15 @@ contract Agreement is ERC721Holder, AccessControl {
             );
             totalTier += uint(artistMapping[artistList[i]].vote.nftTier);
             totalShareInBps += uint(artistMapping[artistList[i]].vote.ownShare);
+            totalRoyaltiesInBps += uint(
+                artistMapping[artistList[i]].vote.royaltiesInBps
+            );
         }
 
-        contractState = State.ForSale;
+        require(totalShareInBps <= 10000, "All shares must not exceed 100%");
 
         saleTier = uint(totalTier / artistList.length);
-        royaltiesInBps = uint(totalShareInBps / artistList.length);
+        royaltiesInBps = uint(totalRoyaltiesInBps / artistList.length);
 
         require(
             checkVoteValidity(
@@ -226,11 +231,15 @@ contract Agreement is ERC721Holder, AccessControl {
             "Resulting agreement terms do not respect every preconditions"
         );
 
+        contractState = State.ForSale;
+
         SampleNFT(collection_address).setTokenRoyalty(
             tokenId,
             address(this),
             uint96(royaltiesInBps)
         );
+        console.log("Price: %s", tierPrice[saleTier]);
+        console.log("Sale tier: %s", saleTier);
         emit ForSale(tierPrice[saleTier]);
     }
 
@@ -238,7 +247,8 @@ contract Agreement is ERC721Holder, AccessControl {
         address _collectionAddress,
         uint256 _tokenId,
         address[] memory _artists,
-        address _initialOwner
+        address _initialOwner,
+        uint64[3] memory _tierPrice
     ) external {
         require(contractState == State.Uninitialized, "Already initialized");
         _setupRole(TYXIT_ROLE, TYXIT_ADMIN);
@@ -255,6 +265,7 @@ contract Agreement is ERC721Holder, AccessControl {
         collection.safeTransferFrom(_initialOwner, address(this), _tokenId);
         tokenId = _tokenId;
         contractState = State.Initialized;
+        tierPrice = _tierPrice;
         emit Init(_collectionAddress, _tokenId, _artists, _initialOwner);
     }
 
@@ -267,6 +278,15 @@ contract Agreement is ERC721Holder, AccessControl {
 
         sellingPrice = msg.value;
         emit Purchase(msg.sender, msg.value);
+    }
+
+    function getRedeemableAmount() public onlyArtist view returns (uint reedemableAmount) {
+        require(
+            contractState == State.Redeemable ||
+                contractState == State.Canceled,
+            "Can not redeem yet"
+        );
+        return sellingPrice * artistMapping[msg.sender].vote.ownShare / 1000;
     }
 
     function redeem() external onlyArtist {
@@ -283,7 +303,7 @@ contract Agreement is ERC721Holder, AccessControl {
         // TO-DO: Vérifier opération
         // uint256 toRedeem = ownersStruct[msg.sender].share * tierPrice[saleTier] / 100;
 
-        uint256 toRedeem = sellingPrice / artistList.length;
+        uint256 toRedeem = getRedeemableAmount();
         sendViaCall(payable(msg.sender), toRedeem);
         emit Redeem(msg.sender, toRedeem);
     }

@@ -6,6 +6,14 @@ import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address } from "../";
 import VoteForm from "./VoteForm";
 
+export const States = {
+  Uninitialized: "Uninitialized",
+  Initialized: "Initialized",
+  ForSale: "Sale is open",
+  Redeemable: "Redeemable",
+  Canceled: "Canceled",
+};
+
 export const AgreementABI = [
   "event Init(address _collectionAddress, uint256 _tokenId, address[] _artists, address _initialOwner)",
   "event TierProposition(address indexed _artist, uint _value)",
@@ -22,6 +30,7 @@ export const AgreementABI = [
   "function purchase() external payable",
   "function redeem() external",
   "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
+  "function getRedeemableAmount() public view returns (uint reedemableAmount)",
 ];
 
 export default function Agreement({
@@ -79,6 +88,7 @@ export default function Agreement({
     } else if (RedeemableEvents.length > 0) {
       setAgreementState(States.Redeemable);
     } else if (PurchaseEvents.length > 0) {
+      setRedeemAmout(await contract.getRedeemableAmount());
       setAgreementState(States.Redeemable);
     } else if (ForSaleEvents.length > 0) {
       setAgreementState(States.ForSale);
@@ -113,13 +123,7 @@ export default function Agreement({
   const contract = new ethers.Contract(contractAddress, AgreementABI, userSigner);
 
   let agreementsAddresses = AgreementsCreatedEvents.map(elem => elem.args._contract);
-  const States = {
-    Uninitialized: "Uninitialized",
-    Initialized: "Initialized",
-    ForSale: "Sale is open",
-    Redeemable: "Redeemable",
-    Canceled: "Canceled",
-  };
+
   const Tier = {
     Silver: "Silver",
     Gold: "Gold",
@@ -129,6 +133,7 @@ export default function Agreement({
   const [agreementState, setAgreementState] = useState(States.Uninitialized);
   const [artistsState, setArtistsState] = useState([]);
   const [artistsVoteMap, setArtistsVoteMap] = useState(new Map());
+  const [redeemAmount, setRedeemAmout] = useState(0);
   const updateArtistsVoteMap = (k, v) => {
     setArtistsVoteMap(new Map(artistsVoteMap.set(k, v)));
   };
@@ -150,9 +155,10 @@ export default function Agreement({
       console.log("CONTRACT STATE -- PURCHASE");
       setAgreementState(States.Redeemable);
     });
-    contract.on("Redeem", (_artist, _value) => {
+    contract.on("Redeem", async (_artist, _value) => {
       console.log("CONTRACT STATE -- REDEEM");
       setAgreementState(States.Redeemable);
+      setRedeemAmout(await contract.getRedeemableAmount());
     });
     contract.on("Canceled", _admin => {
       console.log("CONTRACT STATE -- CANCELED");
@@ -167,6 +173,9 @@ export default function Agreement({
         exploitable: _exploitable,
       });
     });
+
+    console.log(`CURRENT STATE ${agreementState}`);
+
     return () => {
       contract.removeAllListeners();
     };
@@ -182,7 +191,7 @@ export default function Agreement({
     >
       {agreementsAddresses.includes(contractAddress) ? (
         <>
-          {States[agreementState]}
+          {agreementState}
           <List
             bordered={false}
             itemLayout="vertical"
@@ -190,6 +199,7 @@ export default function Agreement({
             dataSource={artistsState}
             renderItem={item => (
               <List.Item>
+                {agreementState == States.Redeemable && <h3> Amount to redeem {redeemAmount.toString()}</h3>}
                 <List.Item.Meta
                   title={
                     <>
@@ -227,8 +237,14 @@ export default function Agreement({
               </Button>
             </List.Item>
           )}
-          {canVote && agreementState !== States.Canceled && (
-            <VoteForm readContracts={readContracts} address={address} tx={tx} agreementContract={contract} />
+          {canVote && (
+            <VoteForm
+              agreementState={agreementState}
+              readContracts={readContracts}
+              address={address}
+              tx={tx}
+              agreementContract={contract}
+            />
           )}
         </>
       ) : (

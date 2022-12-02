@@ -75,6 +75,19 @@ export default function PreconditionsForm({ tx, artistContract }) {
         >
           Cast a vote
         </Button>
+
+        <Button
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            try {
+              const result = tx(artistContract.withdraw(), updateNotif);
+            } catch (errorInfo) {
+              console.log("Failed:", errorInfo);
+            }
+          }}
+        >
+          Get your due royalties
+        </Button>
       </Form.Item>
     </Form>
   );

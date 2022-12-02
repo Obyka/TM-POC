@@ -41,7 +41,6 @@ export default function ManageAgreementsArtists({
   let artistAgreements = AgreementsCreatedEvents.filter(elem => elem.args._coArtists.includes(address)).map(
     elem => elem.args._contract,
   );
-  console.log(`Artist agreements ${JSON.stringify(artistAgreements)}`);
 
   return (
     <Card title={"Ongoins agreements"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>

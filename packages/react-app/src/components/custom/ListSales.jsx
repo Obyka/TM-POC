@@ -6,36 +6,10 @@ import { AddressInput, Address, Balance, Events } from "../";
 import { readString } from "react-papaparse";
 import { ethers } from "ethers";
 import { AgreementABI } from "./Agreement.jsx";
-import { NFTABI } from "./NFT.jsx";
+import NFT, { NFTABI } from "./NFT.jsx";
 import { create } from "ipfs-http-client";
 
 const { BufferList } = require("bl");
-const projectId = process.env.REACT_APP_IPFS_PROJECT_ID;
-const projectSecret = process.env.REACT_APP_IPFS_PROJECT_SECRET;
-const authorization = "Basic " + Buffer.from(projectId + ":" + projectSecret).toString("base64");
-
-let ipfs;
-try {
-  ipfs = create({
-    url: "https://ipfs.infura.io:5001/api/v0",
-    headers: {
-      authorization,
-    },
-  });
-} catch (error) {
-  console.log(error);
-  ipfs = undefined;
-}
-
-console.log(`IPFS: ${JSON.stringify(ipfs)}`);
-
-const getFromIPFS = async hashToGet => {
-  const content = new BufferList();
-  for await (const chunk of ipfs.cat(hashToGet)) {
-    content.append(chunk);
-  }
-  return JSON.parse(content.toString());
-};
 
 export default function ListSales({
   userSigner,
@@ -71,7 +45,7 @@ export default function ListSales({
   );
 
   const [sales, setSales] = useState(new Map());
-  const [nftContract, setNftContract] = useState(-1);
+
   const updateSalesMap = (k, v) => {
     setSales(new Map(sales.set(k, v)));
   };
@@ -103,37 +77,24 @@ export default function ListSales({
     let InitializedEvents = await contract.queryFilter(Initialized, 0);
     let collectionAddress = InitializedEvents[0].args[0];
     let tokenId = InitializedEvents[0].args[1];
-    let nft;
-    if (nftContract === -1) {
-      nft = new ethers.Contract(collectionAddress, NFTABI, userSigner);
-      setNftContract(nft);
-    } else {
-      nft = nftContract;
-    }
-
-    let metadata = await nft.tokenURI(tokenId);
-
-    const ipfsHash = metadata.replace("ipfs://", "");
-    const objectMetadata = await getFromIPFS(ipfsHash);
 
     const forSale = contract.filters.ForSale();
     const forSaleEvents = await contract.queryFilter(forSale, 0);
-    const price = forSaleEvents[0].args._price.toNumber();
+    const price = forSaleEvents[0].args._price;
 
-    return [collectionAddress, tokenId, objectMetadata, price];
+    return [collectionAddress, tokenId, price];
   }
   async function initStateFromEvents() {
     AgreementsContract.forEach(async currentContract => {
-      console.log(checkForSale(currentContract));
       if (!(await checkForSale(currentContract))) {
         return;
       }
       let result = await extractInfoFromEvents(currentContract);
+      console.log(`price: ${result[3]}`);
       updateSalesMap(currentContract.address, {
         tokenId: result[1],
         collectionId: result[0],
-        nft: result[2],
-        price: result[3],
+        price: result[2],
         contract: currentContract,
       });
     });
@@ -141,7 +102,6 @@ export default function ListSales({
 
   useEffect(() => {
     initStateFromEvents();
-    console.log("YO");
   }, [AgreementsAddress.length]);
 
   useEffect(() => {
@@ -173,30 +133,37 @@ export default function ListSales({
   return (
     <List
       bordered={false}
-      itemLayout="vertical"
+      grid={{
+        gutter: 16,
+        xs: 1,
+        sm: 2,
+        md: 4,
+        lg: 4,
+        xl: 6,
+        xxl: 3,
+      }}
       rowKey={item => `${item}`}
       dataSource={Array.from(sales.keys())}
       renderItem={item => (
         <List.Item>
-          <Card
-            hoverable
-            style={{
-              width: 240,
-              margin: "auto",
+          <NFT
+            tx={tx}
+            readContracts={readContracts}
+            localProvider={localProvider}
+            userSigner={userSigner}
+            nftAddress={sales.get(item).collectionId}
+            price={sales.get(item).price}
+            tokenId={sales.get(item).tokenId}
+          />
+          <Button
+            style={{ marginTop: 8 }}
+            onClick={async () => {
+              const options = { value: sales.get(item).price };
+              const reciept = await sales.get(item).contract.purchase(options);
             }}
-            cover={<img alt="NFT Image" src={sales.get(item).nft.image} />}
           >
-            <Card.Meta title={`NFT #${sales.get(item).tokenId}`} description={`${sales.get(item).nft.description}`} />
-            Price: {ethers.utils.formatEther(sales.get(item).price)}
-            <Button
-              onClick={async () => {
-                const options = { value: sales.get(item).price };
-                const reciept = await sales.get(item).contract.purchase(options);
-              }}
-            >
-              Buy item
-            </Button>
-          </Card>
+            Buy item
+          </Button>
         </List.Item>
       )}
     />
