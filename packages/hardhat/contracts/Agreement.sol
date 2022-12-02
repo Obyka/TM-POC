@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-//https://ethereum.stackexchange.com/questions/13167/are-there-well-solved-and-simple-storage-patterns-for-solidity
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "./IArtist.sol";
 import "./SampleNFT.sol";
 import "hardhat/console.sol";
 
-contract Agreement is ERC721Holder, AccessControl {
+contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     // Events
     event Init(
         address _collectionAddress,
@@ -68,6 +65,7 @@ contract Agreement is ERC721Holder, AccessControl {
     uint saleTier;
     uint sellingPrice;
     uint royaltiesInBps;
+    uint bpsBasis;
 
     // These are for checking agreement validity for each artist
     uint maxPreconditionTier;
@@ -85,6 +83,21 @@ contract Agreement is ERC721Holder, AccessControl {
 
     modifier onlyArtist() {
         require(isArtist(msg.sender), "not artist");
+        _;
+    }
+
+    modifier validAdhesion(address _contract) {
+        require(
+            ERC165CheckerUpgradeable.supportsInterface(
+                _contract,
+                type(IArtist).interfaceId
+            ),
+            "The contract does not implement the Artist interface"
+        );
+        require(
+            IArtist(payable(_contract)).getArtistAddress() == msg.sender,
+            "Sender is not the owner of supplied voter contract"
+        );
         _;
     }
 
@@ -120,23 +133,15 @@ contract Agreement is ERC721Holder, AccessControl {
         Tier _nftTier,
         bool _exploitable,
         address _voter
-    ) external onlyArtist {
+    ) external onlyArtist validAdhesion(_voter) {
         require(contractState == State.Initialized);
         require(
-            _royaltiesInBps <= 10000,
+            _royaltiesInBps <= bpsBasis,
             "Royalties must not exceed 100 percent"
         );
         require(
-            _ownShareInBps <= 10000,
+            _ownShareInBps <= bpsBasis,
             "Own share must not exceed 100 percent"
-        );
-        require(
-            ERC165Checker.supportsInterface(_voter, type(IArtist).interfaceId),
-            "The contract does not implement the Artist interface"
-        );
-        require(
-            IArtist(payable(_voter)).getArtistAddress() == msg.sender,
-            "Sender is not the owner of supplied voter contract"
         );
 
         (uint currPreconditionRoyalties, uint currPreconditionTier) = IArtist(
@@ -190,10 +195,6 @@ contract Agreement is ERC721Holder, AccessControl {
             _votedRoyalty >= royaltyPrecondition;
     }
 
-    //  uint _royaltiesInBps : Floor average is computed for now
-    //  uint _ownShareInBps : Total share should not exceed 10000 bps
-    //  Tier _nftTier : Floor average is computed for now
-    //  bool _exploitable: Only true if all artists agree
     function putForSale() external onlyArtist {
         require(
             contractState == State.Initialized,
@@ -216,7 +217,7 @@ contract Agreement is ERC721Holder, AccessControl {
             );
         }
 
-        require(totalShareInBps <= 10000, "All shares must not exceed 100%");
+        require(totalShareInBps <= bpsBasis, "All shares must not exceed 100%");
 
         saleTier = uint(totalTier / artistList.length);
         royaltiesInBps = uint(totalRoyaltiesInBps / artistList.length);
@@ -249,9 +250,14 @@ contract Agreement is ERC721Holder, AccessControl {
         address[] memory _artists,
         address _initialOwner,
         uint64[3] memory _tierPrice
-    ) external {
+    ) external initializer {
+
+        __AccessControl_init();
+        __ERC721Holder_init();
+
         require(contractState == State.Uninitialized, "Already initialized");
         _setupRole(TYXIT_ROLE, TYXIT_ADMIN);
+        bpsBasis = 10000;
 
         for (uint i = 0; i < _artists.length; i++) {
             address artist = _artists[i];
@@ -280,16 +286,23 @@ contract Agreement is ERC721Holder, AccessControl {
         emit Purchase(msg.sender, msg.value);
     }
 
-    function getRedeemableAmount() public onlyArtist view returns (uint reedemableAmount) {
+    function getRedeemableAmount()
+        public
+        view
+        onlyArtist
+        returns (uint reedemableAmount)
+    {
         require(
             contractState == State.Redeemable ||
                 contractState == State.Canceled,
             "Can not redeem yet"
         );
-        return sellingPrice * artistMapping[msg.sender].vote.ownShare / 1000;
+        return (sellingPrice * artistMapping[msg.sender].vote.ownShare) / bpsBasis;
     }
 
-    function redeem() external onlyArtist {
+    function redeem(
+        address _adhesion
+    ) external onlyArtist validAdhesion(_adhesion) {
         require(
             contractState == State.Redeemable ||
                 contractState == State.Canceled,
@@ -300,15 +313,19 @@ contract Agreement is ERC721Holder, AccessControl {
             "Artist has already redeemed"
         );
         artistMapping[msg.sender].hasRedeem = true;
-        // TO-DO: Vérifier opération
-        // uint256 toRedeem = ownersStruct[msg.sender].share * tierPrice[saleTier] / 100;
 
         uint256 toRedeem = getRedeemableAmount();
-        sendViaCall(payable(msg.sender), toRedeem);
+        sendViaCall(payable(_adhesion), toRedeem);
         emit Redeem(msg.sender, toRedeem);
     }
 
     function sendViaCall(address payable _to, uint _value) internal {
+        require(_value <= address(this).balance, "Not enough ether in balance.");
+        console.log("Sending %s ether", _value);
+        console.log("To %s", _to);
+        console.log("Balance %s", (address(this).balance));
+
+
         (bool sent, ) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");
     }

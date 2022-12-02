@@ -4,7 +4,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 import "./IArtist.sol";
 
-contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
+contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable{
     struct RightsHolder {
         uint shareInBPS;
         uint balance;
@@ -52,6 +52,7 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         );
         _registerInterface(type(IArtist).interfaceId);
         __Ownable_init();
+        __ERC165Storage_init();
         transferOwnership(_artist);
         emit Init(_artist, _rightsHolders, _shares);
     }

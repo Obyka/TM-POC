@@ -43,7 +43,8 @@ export default function ManageAgreementsArtists({
   );
 
   return (
-    <Card title={"Ongoins agreements"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
+    <>
+      <h3>Ongoing agreements</h3>
       <List
         bordered={false}
         itemLayout="vertical"
@@ -63,6 +64,6 @@ export default function ManageAgreementsArtists({
           />
         )}
       />
-    </Card>
+    </>
   );
 }

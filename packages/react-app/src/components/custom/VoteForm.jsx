@@ -124,10 +124,11 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
             style={{ marginTop: 8 }}
             onClick={async () => {
               try {
-                const result = tx(agreementContract.redeem(), updateNotif);
-
-                console.log("awaiting metamask/web3 confirm result...", result);
-                console.log(await result);
+                if (artistContract) {
+                  const result = tx(agreementContract.redeem(artistContract), updateNotif);
+                  console.log("awaiting metamask/web3 confirm result...", result);
+                  console.log(await result);
+                }
               } catch (e) {
                 console.log(e);
               }

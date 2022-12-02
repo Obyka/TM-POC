@@ -28,7 +28,7 @@ export const AgreementABI = [
   "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external",
   "function putForSale() external",
   "function purchase() external payable",
-  "function redeem() external",
+  "function redeem(address _adhesion) external",
   "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
   "function getRedeemableAmount() public view returns (uint reedemableAmount)",
 ];
@@ -134,6 +134,7 @@ export default function Agreement({
   const [artistsState, setArtistsState] = useState([]);
   const [artistsVoteMap, setArtistsVoteMap] = useState(new Map());
   const [redeemAmount, setRedeemAmout] = useState(0);
+
   const updateArtistsVoteMap = (k, v) => {
     setArtistsVoteMap(new Map(artistsVoteMap.set(k, v)));
   };
