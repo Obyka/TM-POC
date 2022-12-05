@@ -35,14 +35,21 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     const admin1Sig = await ethers.getNamedSigner("admin1")
     const buyer1Sig = await ethers.getNamedSigner("buyer1")
 
-
     await deploy("SampleNFT", {
         from: deployer,
         log: true,
         waitConfirmations: 5,
         args: ["blup"]
-    });
-    const SampleNFT = await ethers.getContract("SampleNFT", deployer);
+      });
+      const SampleNFT = await ethers.getContract("SampleNFT", deployer);
+    
+      await deploy("Settings", {
+        from: admin1,
+        log: true,
+        waitConfirmations: 5,
+        args: [SampleNFT.address]
+      });
+      const Settings = await ethers.getContract("Settings", admin1);
 
     await deploy("Artist", {
         from: deployer,
@@ -69,6 +76,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
         from: deployer,
         log: true,
         waitConfirmations: 5,
+        args: [Settings.address]
     });
     const FactoryCloneAgreement = await ethers.getContract("FactoryCloneAgreement", deployer);
 
@@ -106,11 +114,13 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
 
     // Approve du contrat Agreement pour le tokenID
     await SampleNFT.connect(artist1Sig).approve(predictAddress, tokenID)
-
+    
+    console.log("Approved address")
     // Création de l'agreement entre artist1 et artist2
-    const createdAgreement = await FactoryCloneAgreement.connect(artist1Sig).createAgreement([artist1, artist2], SampleNFT.address, tokenID, randomNumberSalt)
-    let agreementReceipt = await createdAgreement.wait()
-
+    console.log(Settings.address)
+    const createdAgreement = await FactoryCloneAgreement.connect(artist1Sig).createAgreement([artist1, artist2], tokenID, randomNumberSalt)
+    //let agreementReceipt = await createdAgreement.wait()
+    console.log("Agreement created")
     const cloneAgreementContract = new ethers.Contract(predictAddress, AgreementABI);
 
     // Votes de artist1 et artist2
@@ -130,8 +140,8 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     await cloneAgreementContract.connect(buyer1Sig).purchase(options)
 
     // Redeem par les deux artistes
-    await cloneAgreementContract.connect(artist1Sig).redeem(artist1Contract)
-    await cloneAgreementContract.connect(artist2Sig).redeem(artist2Contract)
+    //await cloneAgreementContract.connect(artist1Sig).redeem(artist1Contract)
+    //await cloneAgreementContract.connect(artist2Sig).redeem(artist2Contract)
 
 
 

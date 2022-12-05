@@ -2,7 +2,7 @@ import { Button, Divider } from "antd";
 import React, { useState } from "react";
 
 import { AddressInput, Address, Balance, Events } from "../components";
-import ManageAgreements from "../components/custom/ManageAgreements";
+import ManageAgreementsTyxit from "../components/custom/ManageAgreementsTyxit";
 
 export default function TyxitAdmin({
   userSigner,
@@ -30,7 +30,7 @@ export default function TyxitAdmin({
   }
 
   return (
-    <ManageAgreements
+    <ManageAgreementsTyxit
       localProvider={localProvider}
       address={address}
       tx={tx}

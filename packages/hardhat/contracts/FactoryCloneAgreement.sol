@@ -7,23 +7,24 @@ import "./Agreement.sol";
 
 contract FactoryCloneAgreement {
     address public immutable agreementImpl;
+    address public immutable settings;
     
     mapping(address => address) public agreementToContract;
     event AgreementCreated(address[] _coArtists, address _contract);
 
-    constructor() {
+    constructor(address _settings) {
         agreementImpl = address(new Agreement());
+        settings = _settings;
     }
 
-    function createAgreement(address[] memory  _artists, address _collection_address, uint _tokenId, bytes32 salt) external returns (address){
+    function createAgreement(address[] memory  _artists, uint _tokenId, bytes32 salt) external returns (address){
         address clone = Clones.cloneDeterministic(agreementImpl, salt);
         console.log("Creating Agreement clone with address %s",clone);
         console.logBytes32(salt);
         console.log("Deployer %s",msg.sender);
         console.log("Agreement impl %s",agreementImpl);
 
-        uint64[3] memory tierPrice = [0.1 ether, 0.2 ether, 0.4 ether];
-        Agreement(clone).initialize(_collection_address, _tokenId, _artists, msg.sender, tierPrice);
+        Agreement(payable(clone)).initialize(_tokenId, _artists, msg.sender, settings);
         agreementToContract[msg.sender] = clone;
         emit AgreementCreated(_artists, clone);
         console.log("Event emitted");

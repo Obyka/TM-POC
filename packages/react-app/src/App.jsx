@@ -277,6 +277,16 @@ function App(props) {
             */}
 
           <Contract
+            name="Settings"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+
+          <Contract
             name="SampleNFT"
             price={price}
             signer={userSigner}

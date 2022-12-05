@@ -15,22 +15,22 @@ export const States = {
 };
 
 export const AgreementABI = [
-  "event Init(address _collectionAddress, uint256 _tokenId, address[] _artists, address _initialOwner)",
-  "event TierProposition(address indexed _artist, uint _value)",
+  "function initialize(uint256 _tokenId,address[] memory _artists,address _initialOwner,address _settings) external",
+  "function purchase() external payable",
+  "function getState() public view returns (uint)",
+  "function cancelAgreement() public",
+  "function redeem_artist(address _adhesion) external",
+  "function redeem_tyxit()",
+  "function isArtist(address artistAddress) public view returns (bool isIndeed)",
+  "function putForSale() external",
+  "function vote(uint _royaltiesInBps,uint _ownShareInBps,Tier _nftTier,bool _exploitable,address _voter) external",
+  "function getBalance() external view returns (uint _balance)",
+  "event Init(address _collectionAddress,uint256 _tokenId,address[] _artists,address _initialOwner)",
   "event ForSale(uint _price)",
   "event Purchase(address indexed _buyer, uint _value)",
   "event Redeem(address indexed _artist, uint _value)",
   "event Canceled(address admin)",
-  "event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, uint8 _nftTier, bool _exploitable)",
-  "function getState() public view returns(State)",
-  "function cancelAgreement() public",
-  "function isArtist(address artistAddress) public view returns(bool isIndeed)",
-  "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external",
-  "function putForSale() external",
-  "function purchase() external payable",
-  "function redeem(address _adhesion) external",
-  "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
-  "function getRedeemableAmount() public view returns (uint reedemableAmount)",
+  "event NewVote(address _artist,uint _royaltiesInBps,uint _ownShare,uint _nftTier,bool _exploitable)",
 ];
 
 export default function Agreement({
@@ -88,7 +88,7 @@ export default function Agreement({
     } else if (RedeemableEvents.length > 0) {
       setAgreementState(States.Redeemable);
     } else if (PurchaseEvents.length > 0) {
-      setRedeemAmout(await contract.getRedeemableAmount());
+      setRedeemAmount(await contract.getBalance());
       setAgreementState(States.Redeemable);
     } else if (ForSaleEvents.length > 0) {
       setAgreementState(States.ForSale);
@@ -133,7 +133,7 @@ export default function Agreement({
   const [agreementState, setAgreementState] = useState(States.Uninitialized);
   const [artistsState, setArtistsState] = useState([]);
   const [artistsVoteMap, setArtistsVoteMap] = useState(new Map());
-  const [redeemAmount, setRedeemAmout] = useState(0);
+  const [redeemAmount, setRedeemAmount] = useState(0);
 
   const updateArtistsVoteMap = (k, v) => {
     setArtistsVoteMap(new Map(artistsVoteMap.set(k, v)));
@@ -159,7 +159,7 @@ export default function Agreement({
     contract.on("Redeem", async (_artist, _value) => {
       console.log("CONTRACT STATE -- REDEEM");
       setAgreementState(States.Redeemable);
-      setRedeemAmout(await contract.getRedeemableAmount());
+      setRedeemAmount(await contract.getBalance());
     });
     contract.on("Canceled", _admin => {
       console.log("CONTRACT STATE -- CANCELED");
@@ -193,6 +193,10 @@ export default function Agreement({
       {agreementsAddresses.includes(contractAddress) ? (
         <>
           {agreementState}
+          {agreementState == States.Redeemable && (
+            <h3> Amount to redeem: {ethers.utils.formatEther(redeemAmount)} Ξ</h3>
+          )}
+
           <List
             bordered={false}
             itemLayout="vertical"
@@ -200,7 +204,6 @@ export default function Agreement({
             dataSource={artistsState}
             renderItem={item => (
               <List.Item>
-                {agreementState == States.Redeemable && <h3> Amount to redeem {redeemAmount.toString()}</h3>}
                 <List.Item.Meta
                   title={
                     <>
@@ -228,18 +231,27 @@ export default function Agreement({
             )}
           />
           {admin && agreementState !== States.Canceled && (
-            <List.Item>
-              <Button
-                onClick={async () => {
-                  let tx = await contract.cancelAgreement();
-                }}
-              >
-                Cancel agreement
-              </Button>
-            </List.Item>
+            <Button
+              onClick={async () => {
+                let tx = await contract.cancelAgreement();
+              }}
+            >
+              Cancel agreement
+            </Button>
+          )}
+
+          {admin && redeemAmount > 0 && (
+            <Button
+              onClick={async () => {
+                let tx = await contract.redeem_tyxit();
+              }}
+            >
+              Redeem your benefits
+            </Button>
           )}
           {canVote && (
             <VoteForm
+              redeemAmount={redeemAmount}
               agreementState={agreementState}
               readContracts={readContracts}
               address={address}

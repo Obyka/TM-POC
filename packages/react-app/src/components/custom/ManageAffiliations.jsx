@@ -46,8 +46,9 @@ export default function ManageAffiliations({
 
   console.log(AffiliationCreatedEvents);
   return (
-    <Card title={"Affiliated artists"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
+    <h3>
       <List
+        style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}
         bordered={false}
         itemLayout="horizontal"
         rowKey={item => `${item.transactionHash}_${item.logIndex}`}
@@ -66,6 +67,6 @@ export default function ManageAffiliations({
           </List.Item>
         )}
       />
-    </Card>
+    </h3>
   );
 }

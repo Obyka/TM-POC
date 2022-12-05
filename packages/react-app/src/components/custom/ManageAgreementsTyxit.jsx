@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { Button, Card, List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
-import { Address } from "../";
+import { Address } from "..";
 import Agreement from "./Agreement";
-export default function ManageAgreements({
+export default function ManageAgreementsTyxit({
   address,
   tx,
   readContracts,
@@ -38,7 +38,8 @@ export default function ManageAgreements({
   );
 
   return (
-    <Card title={"Ongoins agreements"} style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>
+    <>
+      <h3>Ongoins agreements</h3>
       <List
         bordered={false}
         itemLayout="vertical"
@@ -58,6 +59,6 @@ export default function ManageAgreements({
           />
         )}
       />
-    </Card>
+    </>
   );
 }

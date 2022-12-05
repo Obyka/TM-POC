@@ -6,7 +6,7 @@ const localChainId = "31337";
 
 module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, admin1 } = await getNamedAccounts();
   const chainId = await getChainId();
 
   await deploy("SampleNFT", {
@@ -16,6 +16,14 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     args: ["blup"]
   });
   const SampleNFT = await ethers.getContract("SampleNFT", deployer);
+
+  await deploy("Settings", {
+    from: admin1,
+    log: true,
+    waitConfirmations: 5,
+    args: [SampleNFT.address]
+  });
+  const Settings = await ethers.getContract("Settings", admin1);
 
   await deploy("Artist", {
     from: deployer,
@@ -42,7 +50,8 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     from: deployer,
     log: true,
     waitConfirmations: 5,
+    args: [Settings.address]
   });
   const FactoryCloneAgreement = await ethers.getContract("FactoryCloneAgreement", deployer);
 };
-module.exports.tags = ["SampleNFT", "Artist", "FactoryCloneArtist", "Agreement", "FactoryCloneAgreement"];
+module.exports.tags = ["empty", "SampleNFT", "Artist", "FactoryCloneArtist", "Agreement", "FactoryCloneAgreement"];

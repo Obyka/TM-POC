@@ -84,6 +84,7 @@ export default function Artist({
 
   return (
     <Card
+      style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}
       bordered={false}
       title={
         <>
@@ -103,7 +104,7 @@ export default function Artist({
               <List.Item>
                 <List.Item.Meta
                   title={<Address address={item} ensProvider={mainnetProvider} fontSize={15} />}
-                  description={<>Share: {affiliationsMap.get(item).toNumber()}</>}
+                  description={<>Share: {affiliationsMap.get(item).toNumber() / 100}%</>}
                 />
               </List.Item>
             )}

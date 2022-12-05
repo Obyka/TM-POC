@@ -7,7 +7,7 @@ import { States } from "./Agreement";
 
 const { Option } = Select;
 
-export default function VoteForm({ readContracts, address, tx, agreementContract, agreementState }) {
+export default function VoteForm({ readContracts, address, tx, agreementContract, agreementState, redeemAmount }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {
@@ -119,13 +119,13 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
             </Button>
           </>
         )}
-        {(agreementState == States.Redeemable || agreementState == States.Canceled) && (
+        {(agreementState == States.Redeemable || agreementState == States.Canceled) && redeemAmount > 0 && (
           <Button
             style={{ marginTop: 8 }}
             onClick={async () => {
               try {
                 if (artistContract) {
-                  const result = tx(agreementContract.redeem(artistContract), updateNotif);
+                  const result = tx(agreementContract.redeem_artist(artistContract), updateNotif);
                   console.log("awaiting metamask/web3 confirm result...", result);
                   console.log(await result);
                 }
