@@ -18,9 +18,6 @@ contract FactoryCloneArtist {
         Artist(payable(clone)).initialize(msg.sender, _rightsHolders, _sharesInBPS);
         artistToContract[msg.sender] = clone;
         emit ArtistContractCreated(msg.sender, clone, _rightsHolders, _sharesInBPS);
-        for(uint i=0; i < _rightsHolders.length; i++){
-                console.log("Rights holder: %s",_rightsHolders[i]);
-        }
         return clone;
     }
 }

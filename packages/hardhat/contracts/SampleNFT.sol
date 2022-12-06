@@ -46,6 +46,11 @@ contract SampleNFT is ERC2981, ERC721, ERC721Enumerable, ERC721URIStorage, Ownab
         super._burn(tokenId);
     }
 
+    function burn(uint tokenId) external{
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+        _burn(tokenId);
+    }
+
     function tokenURI(uint256 tokenId)
         public
         view
@@ -64,6 +69,7 @@ contract SampleNFT is ERC2981, ERC721, ERC721Enumerable, ERC721URIStorage, Ownab
     }
 
     function setTokenRoyalty(uint tokenId, address receiver, uint96 feeNumerator) external{
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
         super._setTokenRoyalty(tokenId, receiver, feeNumerator);
     }
 }

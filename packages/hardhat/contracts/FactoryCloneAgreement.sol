@@ -33,14 +33,9 @@ contract FactoryCloneAgreement {
 
     function predictDeterministicAddress(
         address implementation,
-        bytes32 salt,
-        address deployer
+        bytes32 salt
     ) public view returns (address predicted) {
         address cloneAddress = Clones.predictDeterministicAddress(implementation, salt);
-        console.log("Predicting address with address %s",cloneAddress);
-        console.logBytes32(salt);
-        console.log("Deployer %s",deployer);
-        console.log("Agreement impl %s",implementation);
         return cloneAddress;
     }
 }
