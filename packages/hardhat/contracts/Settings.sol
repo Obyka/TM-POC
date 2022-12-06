@@ -27,7 +27,7 @@ contract Settings is Ownable, ISettings {
     address payable public override collectionAddress;
 
     constructor(address payable _collectionAddress) {
-        require(_collectionAddress != address(0));
+        require(_collectionAddress != address(0), "Null address");
         feeAmount = 500;
         feeReceiver = payable(msg.sender);
         administrator = payable(msg.sender);
