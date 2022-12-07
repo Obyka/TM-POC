@@ -34,6 +34,8 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         address rightHolderContract,
         uint rightsHoldersSharesInBPS
     );
+    event MinimalTierUpdated(address _rightsholder, uint _old, uint _new);
+    event MinimalRoyaltiesUpdated(address _rightsholder, uint _old, uint _new);
 
     function initialize(
         address _artist,
@@ -74,10 +76,6 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
             "Sum of shares is greater than 100%"
         );
         artistShareInBPS = basis - rightsHoldersSharesInBPS;
-        require(
-            artistShareInBPS + rightsHoldersSharesInBPS == basis,
-            "Invalid share amount"
-        );
 
         rightsHolderMap[_artist].shareInBPS = artistShareInBPS;
         rightsHolderMap[_artist].isRightHolder = true;
@@ -96,12 +94,35 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         uint _minimalTier
     ) external override {
         require(isRightsHolder(msg.sender), "Sender is not a right holder");
-        require(_minimalRoyaltiesInBps <= 10000);
-        require(_minimalTier <= 2);
+        require(
+            _minimalRoyaltiesInBps <= 10000,
+            "minimalRoyaltiesInBps is greater than 10000"
+        );
+        require(_minimalTier <= 2, "minimalTier is greater than 2");
 
-        rightsHolderMap[msg.sender]
-            .minimalRoyaltiesInBps = _minimalRoyaltiesInBps;
-        rightsHolderMap[msg.sender].minimalTier = _minimalTier;
+        uint oldMinimalRoyaltiesInBps = rightsHolderMap[msg.sender]
+            .minimalRoyaltiesInBps;
+        uint oldMinimalTier = rightsHolderMap[msg.sender].minimalTier;
+
+        if (oldMinimalRoyaltiesInBps != _minimalRoyaltiesInBps) {
+            emit MinimalRoyaltiesUpdated(
+                msg.sender,
+                oldMinimalRoyaltiesInBps,
+                _minimalRoyaltiesInBps
+            );
+            rightsHolderMap[msg.sender]
+                .minimalRoyaltiesInBps = _minimalRoyaltiesInBps;
+        }
+
+        if (oldMinimalTier != _minimalTier) {
+            emit MinimalTierUpdated(
+                msg.sender,
+                oldMinimalTier,
+                _minimalTier
+            );
+            rightsHolderMap[msg.sender]
+                .minimalTier = _minimalTier;
+        }
 
         maxPreconditionRoyaltiesInBps = maxPreconditionRoyaltiesInBps <
             _minimalRoyaltiesInBps

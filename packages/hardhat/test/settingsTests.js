@@ -1,20 +1,20 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Settings tests", function () {
-  //const { deployer, rightsholder1, rightsholder2, artist1, artist2, admin1, buyer1 } = await getNamedAccounts();
 
-  let settingsContract;
-  let nftContract;
 
-  beforeEach(async () => {
+  async function deployTokenFixture() {
     const SampleNFTContract = await ethers.getContractFactory("SampleNFT");
-    nftContract = await SampleNFTContract.deploy("");
+    const nftContract = await SampleNFTContract.deploy("");
 
     const SettingsContract = await ethers.getContractFactory("Settings");
-    settingsContract = await SettingsContract.deploy(nftContract.address);
-  });
+    const settingsContract = await SettingsContract.deploy(nftContract.address);
+
+    // Fixtures can return anything you consider useful for your tests
+    return { settingsContract, nftContract};
+  }
 
   // quick fix to let gas reporter fetch data from gas station & coinmarketcap
   before((done) => {
@@ -34,6 +34,8 @@ describe("Settings tests", function () {
 
     describe("Events", function () {
       it("Should emit UpdateFeeAmount event with args when value is updated", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
+
         await expect(settingsContract
           .setFeeAmount(10))
           .to.emit(settingsContract, 'UpdateFeeAmount')
@@ -42,6 +44,7 @@ describe("Settings tests", function () {
       });
 
       it("Should emit UpdateFeeReceiver event with args when value is updated", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         await expect(settingsContract
           .setFeeReceiver("0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"))
           .to.emit(settingsContract, 'UpdateFeeReceiver')
@@ -49,6 +52,7 @@ describe("Settings tests", function () {
       });
 
       it("Should emit UpdateAdministrator event with args when value is updated", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         await expect(settingsContract
           .setAdministrator("0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"))
           .to.emit(settingsContract, 'UpdateAdministrator')
@@ -56,6 +60,7 @@ describe("Settings tests", function () {
       });
 
       it("Should emit UpdateTierPrices event with args when value is updated", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         await expect(settingsContract
           .setTierPrices(["0.2", "0.3", "0.4"].map((elem) => ethers.utils.parseEther(elem))))
           .to.emit(settingsContract, 'UpdateTierPrices')
@@ -65,6 +70,7 @@ describe("Settings tests", function () {
       });
 
       it("Should emit UpdateCollectionAddress event with args when value is updated", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         await expect(settingsContract
           .setCollectionAddress("0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"))
           .to.emit(settingsContract, 'UpdateCollectionAddress')
@@ -76,6 +82,7 @@ describe("Settings tests", function () {
 
     describe("Settings values", function () {
       it("Should return initial values", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         const feeAmount = 500;
         const deployer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
         const feeReceiver = deployer;
@@ -90,6 +97,7 @@ describe("Settings tests", function () {
       });
 
       it("Should return modified values", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         const feeAmount = 600;
         const deployer = "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc";
         const feeReceiver = deployer;
@@ -111,6 +119,7 @@ describe("Settings tests", function () {
 
     describe("Settings errors", function () {
       it("Should revert when new values are bigger than max", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
         const maxFeeAmount = await settingsContract.maxFeeAmount();
         const maxSilverPrice = await settingsContract.maxTierPrices(0);
         const maxGoldPrice = await settingsContract.maxTierPrices(1);
@@ -124,6 +133,7 @@ describe("Settings tests", function () {
       });
 
       it("Should revert when new address values are invalid", async function () {
+        const { settingsContract, nftContract } = await loadFixture(deployTokenFixture);
 
         await expect(settingsContract.setAdministrator(ethers.constants.AddressZero)).to.be.revertedWith("Null address");
         await expect(settingsContract.setFeeReceiver(ethers.constants.AddressZero)).to.be.revertedWith("Null address");

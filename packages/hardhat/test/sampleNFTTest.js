@@ -1,18 +1,17 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("NFT tests", function () {
 
-    let nftContract;
-    let artist1Sig;
 
-    beforeEach(async () => {
+
+    async function deployNFTFixture() {
         const SampleNFTContract = await ethers.getContractFactory("SampleNFT");
-        artist1Sig = await ethers.getNamedSigner("artist1")
-        nftContract = await SampleNFTContract.deploy("testURI");
-
-    });
+        const artist1Sig = await ethers.getNamedSigner("artist1")
+        const nftContract = await SampleNFTContract.deploy("testURI");
+        return {nftContract, artist1Sig}
+    }
 
     // quick fix to let gas reporter fetch data from gas station & coinmarketcap
     before((done) => {
@@ -21,18 +20,21 @@ describe("NFT tests", function () {
 
     describe("SampleNFT deployment", function () {
         it("Should init NFT contract", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             expect(await nftContract.contractURI()).to.equal("testURI");
         });
     });
 
     describe("SampleNFT safeMint", function () {
         it("safeMint function should return new tokenId", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let owner = ethers.Wallet.createRandom();
             let tokenId = await nftContract.callStatic.safeMint(owner.address, "")
             expect(tokenId).to.equal(0);
         });
 
         it("safeMint function should set tokenURI", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             const newTokenURI = "newTokenURI"
             let owner = ethers.Wallet.createRandom();
             let tokenId = await nftContract.callStatic.safeMint(owner.address, newTokenURI)
@@ -42,6 +44,7 @@ describe("NFT tests", function () {
         });
 
         it("safeMint function should increment new tokenId", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let owner = ethers.Wallet.createRandom();
             await nftContract.safeMint(owner.address, "")
             let tokenId = await nftContract.callStatic.safeMint(owner.address, "")
@@ -51,18 +54,21 @@ describe("NFT tests", function () {
 
     describe("SampleNFT contractURI", function () {
         it("Owner can modify contractURI", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             const newContractURI = "newContractURI"
             await nftContract.setContractURI(newContractURI);
             expect(await nftContract.contractURI()).to.equal(newContractURI);
         });
 
         it("setContractURI should revert if not called by the owner", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             await expect(nftContract.connect(artist1Sig).setContractURI("newContractURI")).to.revertedWith("Ownable: caller is not the owner");
         });
     });
 
     describe("SampleNFT royaltyInfo", function () {
         it("royaltyInfo function should return correct royalty info", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             const tokenId = await nftContract.callStatic.safeMint(artist1Sig.address, "")
             await nftContract.safeMint(artist1Sig.address, "")
             await nftContract.connect(artist1Sig).setTokenRoyalty(tokenId, artist1Sig.address, 1000)
@@ -73,6 +79,7 @@ describe("NFT tests", function () {
         });
 
         it("royaltyInfo function should revert when caller is not owner", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let legitime_owner = ethers.Wallet.createRandom();
             let not_owner = ethers.Wallet.createRandom();
             let tokenId = await nftContract.callStatic.safeMint(legitime_owner.address, "")
@@ -86,16 +93,19 @@ describe("NFT tests", function () {
     describe("SampleNFT ERC-165", function () {
 
         it("Smart contract should support ERC2981 interface via ERC165", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let interfaceID = "0x2a55205a";
             expect(await nftContract.supportsInterface(interfaceID)).to.equal(true);
         });
 
         it("Smart contract should support ERC721 interface via ERC165", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let interfaceID = "0x5b5e139f";
             expect(await nftContract.supportsInterface(interfaceID)).to.equal(true);
         });
 
         it("Smart contract should support ERC721Enumerable interface via ERC165", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             let interfaceID = "0x780e9d63";
             expect(await nftContract.supportsInterface(interfaceID)).to.equal(true);
         });
@@ -105,6 +115,7 @@ describe("NFT tests", function () {
     describe("SampleNFT burn", function () {
 
         it("A burnt token owner must be the null address", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             await nftContract.safeMint(artist1Sig.address, "")
             await nftContract.connect(artist1Sig).burn(0);
 
@@ -112,6 +123,7 @@ describe("NFT tests", function () {
         });
 
         it("Burn function should revert when caller is not the owner", async function () {
+            const { nftContract, artist1Sig } = await loadFixture(deployNFTFixture);
             await nftContract.safeMint(artist1Sig.address, "")
             await expect(nftContract.burn(0)).to.revertedWith("ERC721: caller is not token owner or approved");
         });

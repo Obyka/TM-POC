@@ -1,26 +1,21 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+
 describe("FactoryCloneArtist tests", function () {
 
-    let factoryCloneArtist;
-    let rightsholder1Sig
-    let rightsholder2Sig
-    let artist1Sig
-    let artist2Sig
+    async function deployContracts(){
 
-
-
-    beforeEach(async () => {
-
-        rightsholder1Sig = await ethers.getNamedSigner("rightsholder1")
-        rightsholder2Sig = await ethers.getNamedSigner("rightsholder2")
-        artist1Sig = await ethers.getNamedSigner("artist1")
-        artist2Sig = await ethers.getNamedSigner("artist2")
+        const rightsholder1Sig = await ethers.getNamedSigner("rightsholder1")
+        const rightsholder2Sig = await ethers.getNamedSigner("rightsholder2")
+        const artist1Sig = await ethers.getNamedSigner("artist1")
+        const artist2Sig = await ethers.getNamedSigner("artist2")
 
         const FactoryCloneArtist = await ethers.getContractFactory("FactoryCloneArtist");
-        factoryCloneArtist = await FactoryCloneArtist.deploy();
-    });
+        const factoryCloneArtist = await FactoryCloneArtist.deploy();
+        return {factoryCloneArtist, rightsholder1Sig, rightsholder2Sig, artist1Sig, artist2Sig} 
+    }
 
     // quick fix to let gas reporter fetch data from gas station & coinmarketcap
     before((done) => {
@@ -29,6 +24,7 @@ describe("FactoryCloneArtist tests", function () {
 
     describe("Artist clone creation", function () {
         it("Should emit an ArtistContractCreated event", async function () {
+            const {factoryCloneArtist, rightsholder1Sig, rightsholder2Sig, artist1Sig, artist2Sig} = await loadFixture(deployContracts)
             const rightHolders = [rightsholder1Sig.address, rightsholder2Sig.address]
             const shares = [50, 50]
             // createArtist(address[] memory  _rightsHolders, uint[] memory _sharesInBPS)
@@ -37,6 +33,7 @@ describe("FactoryCloneArtist tests", function () {
                 .withArgs(artist1Sig.address, anyValue, rightHolders, shares);
         });
         it("Should save artist -> contract association in mapping", async function () {
+            const {factoryCloneArtist, rightsholder1Sig, rightsholder2Sig, artist1Sig, artist2Sig} = await loadFixture(deployContracts)
             const rightHolders = [rightsholder1Sig.address, rightsholder2Sig.address]
             const shares = [50, 50]
             const tx = await factoryCloneArtist.connect(artist1Sig).createArtist(rightHolders, shares)
