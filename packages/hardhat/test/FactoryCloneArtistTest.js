@@ -27,7 +27,6 @@ describe("FactoryCloneArtist tests", function () {
             const {factoryCloneArtist, rightsholder1Sig, rightsholder2Sig, artist1Sig, artist2Sig} = await loadFixture(deployContracts)
             const rightHolders = [rightsholder1Sig.address, rightsholder2Sig.address]
             const shares = [50, 50]
-            // createArtist(address[] memory  _rightsHolders, uint[] memory _sharesInBPS)
             await expect(factoryCloneArtist.connect(artist1Sig).createArtist(rightHolders, shares))
                 .to.emit(factoryCloneArtist, 'ArtistContractCreated')
                 .withArgs(artist1Sig.address, anyValue, rightHolders, shares);
@@ -45,6 +44,4 @@ describe("FactoryCloneArtist tests", function () {
 
         });
     });
-
-
 });

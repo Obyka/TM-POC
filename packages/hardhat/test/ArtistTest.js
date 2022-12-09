@@ -1,6 +1,5 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Artist tests", function () {
@@ -160,7 +159,8 @@ describe("Artist tests", function () {
     describe("is RightsHolder?", function () {
         it("Should return false when param is not a rightsholder", async function () {
             const { artistContract, tx } = await loadFixture(deployContracts)
-            expect(await artistContract.connect(rightsholder1Sig).isRightsHolder(artist2Sig.address)).to.equal(false);
+            expect(await artistContract.connect(rightsholder1Sig)
+                .isRightsHolder(artist2Sig.address)).to.equal(false);
         });
 
         it("Should return true when param is a rightsholder", async function () {

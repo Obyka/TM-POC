@@ -41,6 +41,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         address[] _artists,
         address _initialOwner
     );
+    event VoteResult(uint __royaltiesInBps, uint _nftTier, bool _exploitable);
     event ForSale(uint _price);
     event Purchase(address indexed _buyer, uint _value);
     event Redeem(address indexed _artist, uint _value);
@@ -90,9 +91,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     State public contractState;
 
     address settings;
-    uint[3] tierPrice;
+    uint[3] public tierPrice;
     uint saleTier;
     uint royaltiesInBps;
+    bool exploitable;
     uint bpsBasis;
     uint tyxitBalance;
 
@@ -101,7 +103,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     uint maxPreconditionRoyaltiesInBps;
 
     IERC721 collection;
-    address payable collectionAddress;
+    address payable public collectionAddress;
     uint tokenId;
 
     bytes32 public TYXIT_ROLE;
@@ -116,13 +118,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     ) external initializer {
         __AccessControl_init();
         __ERC721Holder_init();
-        console.log("Agreement init");
         TYXIT_ROLE = keccak256("TYXIT_ROLE");
         settings = _settings;
         collectionAddress = ISettings(settings).collectionAddress();
-        require(contractState == State.Uninitialized, "Already initialized");
         _setupRole(TYXIT_ROLE, ISettings(settings).administrator());
-        console.log("Setup %s as admin", ISettings(settings).administrator());
         bpsBasis = 10000;
 
         for (uint i = 0; i < _artists.length; i++) {
@@ -133,7 +132,6 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         }
 
         collection = IERC721(collectionAddress);
-        console.log("Setting up collection");
         collection.safeTransferFrom(_initialOwner, address(this), _tokenId);
         tokenId = _tokenId;
         contractState = State.Initialized;
@@ -178,7 +176,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         require(
             contractState == State.Redeemable ||
                 contractState == State.Canceled,
-            "Can not redeem yet"
+            "Contract not in Redeemable or Canceled state"
         );
 
         uint toRedeem = artistMapping[msg.sender].balance;
@@ -191,7 +189,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         require(
             contractState == State.Redeemable ||
                 contractState == State.Canceled,
-            "Can not redeem yet"
+            "Contract not in Redeemable or Canceled state"
         );
 
         uint toRedeem = tyxitBalance;
@@ -211,7 +209,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     function putForSale() external onlyArtist {
         require(
             contractState == State.Initialized,
-            "Contract not initialized yet"
+            "Contract not in Initialized state"
         );
 
         uint totalTier = 0;
@@ -221,8 +219,11 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         for (uint i = 0; i < artistList.length; i++) {
             require(
                 artistMapping[artistList[i]].hasVoted,
-                "Every artist must vote"
+                "Every artist should vote"
             );
+            exploitable = i == 0
+                ? artistMapping[artistList[i]].vote.exploitable
+                : exploitable && artistMapping[artistList[i]].vote.exploitable;
             totalTier += uint(artistMapping[artistList[i]].vote.nftTier);
             totalShareInBps += uint(artistMapping[artistList[i]].vote.ownShare);
             totalRoyaltiesInBps += uint(
@@ -230,8 +231,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             );
         }
 
-        require(totalShareInBps <= bpsBasis, "All shares must not exceed 100%");
-
+        require(
+            totalShareInBps <= bpsBasis,
+            "All shares should not exceed 100%"
+        );
         saleTier = uint(totalTier / artistList.length);
         royaltiesInBps = uint(totalRoyaltiesInBps / artistList.length);
 
@@ -246,14 +249,14 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         );
 
         contractState = State.ForSale;
+        emit VoteResult(royaltiesInBps, saleTier, exploitable);
 
         SampleNFT(collectionAddress).setTokenRoyalty(
             tokenId,
             address(this),
             uint96(royaltiesInBps)
         );
-        console.log("Price: %s", tierPrice[saleTier]);
-        console.log("Sale tier: %s", saleTier);
+
         emit ForSale(tierPrice[saleTier]);
     }
 
@@ -264,14 +267,17 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         bool _exploitable,
         address _voter
     ) external onlyArtist validAdhesion(_voter) {
-        require(contractState == State.Initialized);
+        require(
+            contractState == State.Initialized,
+            "Contract not in Initialized state"
+        );
         require(
             _royaltiesInBps <= bpsBasis,
-            "Royalties must not exceed 100 percent"
+            "Royalties should not exceed 100 percent"
         );
         require(
             _ownShareInBps <= bpsBasis,
-            "Own share must not exceed 100 percent"
+            "Own share should not exceed 100 percent"
         );
 
         (uint currPreconditionRoyalties, uint currPreconditionTier) = IArtist(
@@ -332,9 +338,6 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             _value <= address(this).balance,
             "Not enough ether in balance."
         );
-        console.log("Sending %s ether", _value);
-        console.log("To %s", _to);
-        console.log("Balance %s", (address(this).balance));
 
         (bool sent, ) = _to.call{value: _value}("");
         require(sent, "Failed to send Ether");

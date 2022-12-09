@@ -20,7 +20,9 @@ describe("FactoryCloneAgreement tests", function () {
 
         const FactoryCloneAgreement = await ethers.getContractFactory("FactoryCloneAgreement");
         const factoryCloneAgreement = await FactoryCloneAgreement.deploy(settingsContract.address);
-        return {settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig}
+        const implementationAddress = await factoryCloneAgreement.agreementImpl();
+
+        return {implementationAddress, nftContract, settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig}
         
     };
 
@@ -31,25 +33,26 @@ describe("FactoryCloneAgreement tests", function () {
 
     describe("Clone address prediction", function () {
 
-        it("Should predict same address when same params", async function () {
-            const {settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig} = await loadFixture(deployContracts);
-            const salt = ethers.utils.randomBytes(32);
-            const implementationAddress = await factoryCloneAgreement.agreementImpl();
-            const deployer = artist1Sig.address;
+        it("Should emit an AgreementCreated event", async function () {
+            const {implementationAddress, nftContract, settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig} = await loadFixture(deployContracts)
+            const artists = [artist1Sig.address, artist2Sig.address]
+            const tokenId = 0
+            const salt1 = ethers.utils.randomBytes(32);
 
-            const pred1 = await factoryCloneAgreement.predictDeterministicAddress(implementationAddress, salt);
-            const pred2 = await factoryCloneAgreement.predictDeterministicAddress(implementationAddress, salt);
-
-            expect(pred1).to.equal(pred2)
+            await nftContract.connect(artist1Sig).safeMint(artist1Sig.address,"testURI");
+            const addressAgreement = await factoryCloneAgreement.predictDeterministicAddress(implementationAddress, salt1); 
+            await nftContract.connect(artist1Sig).approve(addressAgreement, 0)
+            await expect(factoryCloneAgreement.connect(artist1Sig).createAgreement(artists, tokenId, salt1))
+                    .to.deep.emit(factoryCloneAgreement, "AgreementCreated")
+                    .withArgs(artists, addressAgreement)
 
         });
 
         it("Should predict different address with different salt", async function () {
-            const {settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig} = await loadFixture(deployContracts);
+            const {implementationAddress, settingsContract, factoryCloneAgreement, artist1Sig, artist2Sig, rightsholder1Sig, rightsholder2Sig} = await loadFixture(deployContracts);
             const salt1 = ethers.utils.randomBytes(32);
             const salt2 = ethers.utils.randomBytes(32);
 
-            const implementationAddress = await factoryCloneAgreement.agreementImpl();
             const deployer1 = artist1Sig.address;
 
             const pred1 = await factoryCloneAgreement.predictDeterministicAddress(implementationAddress, salt1);

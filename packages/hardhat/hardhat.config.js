@@ -7,7 +7,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 require("@tenderly/hardhat-tenderly");
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
-
+require('solidity-coverage');
 const { isAddress, getAddress, formatUnits, parseUnits } = utils;
 
 /*
