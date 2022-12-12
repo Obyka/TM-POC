@@ -4,6 +4,7 @@ import { ethers } from "ethers";
 import React, { useEffect, useState } from "react";
 import { AgreementABI } from "./Agreement.jsx";
 import NFT from "./NFT.jsx";
+import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 export default function ListSales({
   userSigner,
@@ -14,22 +15,6 @@ export default function ListSales({
   mainnetProvider,
   localProvider,
 }) {
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
-
   let AgreementsCreatedEvents = useEventListener(
     readContracts,
     "FactoryCloneAgreement",

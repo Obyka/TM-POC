@@ -4,26 +4,11 @@ import { useState } from "react";
 import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
 import { States } from "./Agreement";
+import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 const { Option } = Select;
 
 export default function VoteForm({ readContracts, address, tx, agreementContract, agreementState, redeemAmount }) {
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
-
   const onFinish = values => {
     console.log("Success:", values);
   };

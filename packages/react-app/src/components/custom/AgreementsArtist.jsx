@@ -2,24 +2,10 @@ import { Button, Divider, Input } from "antd";
 import { useContractReader } from "eth-hooks";
 import React, { useState } from "react";
 import { Address } from "..";
+import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 export default function AgreementsArtist({ address, tx, readContracts, writeContracts, mainnetProvider }) {
   const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 5);
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
 
   const [rightHolders, setRightHolders] = useState(address);
   const [shares, setShares] = useState("100");

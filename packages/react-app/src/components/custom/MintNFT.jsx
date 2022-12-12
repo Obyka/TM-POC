@@ -5,6 +5,7 @@ import { InfoCircleOutlined } from "@ant-design/icons";
 import { readString } from "react-papaparse";
 import { create } from "ipfs-http-client";
 import { Address, Events } from "../";
+import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 export default function MintNFT({ address, mainnetProvider, localProvider, tx, readContracts, writeContracts }) {
   const projectId = process.env.REACT_APP_IPFS_PROJECT_ID;
@@ -36,22 +37,6 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
 
   const [image, setImage] = useState("");
   const [artists, setArtists] = useState("");
-
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
 
   const onSubmitHandler = async event => {
     event.preventDefault();

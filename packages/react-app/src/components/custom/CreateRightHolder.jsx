@@ -2,31 +2,9 @@ import { Button, Card, Form } from "antd";
 import { useContractReader } from "eth-hooks";
 import React, { useState } from "react";
 import { Address } from "../";
+import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 export default function CreateRightHolder({ address, tx, readContracts, writeContracts, mainnetProvider }) {
-  const rightHolderContract = useContractReader(
-    readContracts,
-    "FactoryCloneRightHolder",
-    "rightHolderToContract",
-    [address],
-    5,
-  );
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
-
   const [deploying, setDeploying] = useState(false);
 
   return (

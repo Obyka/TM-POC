@@ -1,26 +1,11 @@
 import { Button, Form, InputNumber, Select } from "antd";
 import { ethers } from "ethers";
 import React, { useState } from "react";
+import { updateNotif } from "../../helpers/helperFunctions";
 
 const { Option } = Select;
 
 export default function PreconditionsForm({ tx, artistContract }) {
-  function updateNotif(update) {
-    console.log("📡 Transaction Update:", update);
-    if (update && (update.status === "confirmed" || update.status === 1)) {
-      console.log(" 🍾 Transaction " + update.hash + " finished!");
-      console.log(
-        " ⛽️ " +
-          update.gasUsed +
-          "/" +
-          (update.gasLimit || update.gas) +
-          " @ " +
-          parseFloat(update.gasPrice) / 1000000000 +
-          " gwei",
-      );
-    }
-  }
-
   const onFinish = values => {
     console.log("Success:", values);
   };
