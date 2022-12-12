@@ -48,7 +48,7 @@ export default function PreconditionsForm({ tx, artistContract }) {
               const values = await preconditionsForm.validateFields();
               console.log("Success:", values);
               try {
-                const result = tx(artistContract.setPreconditions(minimalRoyaltiesInBps, minimalTier), updateNotif);
+                tx(artistContract.setPreconditions(minimalRoyaltiesInBps, minimalTier), updateNotif);
               } catch (e) {
                 console.log(e);
               }
@@ -64,7 +64,7 @@ export default function PreconditionsForm({ tx, artistContract }) {
           style={{ marginTop: 8 }}
           onClick={async () => {
             try {
-              const result = tx(artistContract.withdraw(), updateNotif);
+              tx(artistContract.withdraw(), updateNotif);
             } catch (errorInfo) {
               console.log("Failed:", errorInfo);
             }

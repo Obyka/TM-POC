@@ -1,5 +1,4 @@
 import { Button, Card, Form } from "antd";
-import { useContractReader } from "eth-hooks";
 import React, { useState } from "react";
 import { Address } from "../";
 import { updateNotif } from "../../helpers/helperFunctions.jsx";

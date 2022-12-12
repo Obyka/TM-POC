@@ -60,7 +60,7 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
         </Checkbox>
       </Form.Item>
       <Form.Item>
-        {agreementState == States.Initialized && (
+        {agreementState === States.Initialized && (
           <>
             <Button
               style={{ marginTop: 8 }}
@@ -110,7 +110,7 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
             </Button>
           </>
         )}
-        {(agreementState == States.Redeemable || agreementState == States.Canceled) && redeemAmount > 0 && (
+        {(agreementState === States.Redeemable || agreementState === States.Canceled) && redeemAmount > 0 && (
           <Button
             style={{ marginTop: 8 }}
             onClick={async () => {

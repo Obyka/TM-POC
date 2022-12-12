@@ -1,6 +1,5 @@
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Card, Form, Input, InputNumber, Space } from "antd";
-import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
 import React, { useEffect, useState } from "react";
 import { Address } from "../";
@@ -85,7 +84,7 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
           style={{ marginTop: 8 }}
           onClick={async () => {
             try {
-              const valid = await createForm.validateFields();
+              await createForm.validateFields();
               const values = createForm.getFieldsValue();
               setRightHolders(values.rightsHolders.map(elem => elem.address));
               setShares(values.rightsHolders.map(elem => elem.share * 100));

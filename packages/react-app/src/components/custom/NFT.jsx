@@ -50,7 +50,6 @@ export default function NFT({ tx, readContracts, localProvider, userSigner, nftA
       const ipfsHash = metadata.replace("ipfs://", "");
       const objectMetadata = await getFromIPFS(ipfsHash);
       if (objectMetadata) {
-        setIpfsHash(ipfsHash);
         setObjectMetadata(objectMetadata);
         setTitle(`NFT #${tokenId}`);
         setDescription(objectMetadata.description);
@@ -60,7 +59,6 @@ export default function NFT({ tx, readContracts, localProvider, userSigner, nftA
   }
 
   const [nftContract, setNftContract] = useState(-1);
-  const [ipfsHash, setIpfsHash] = useState("");
   const [objectMetadata, setObjectMetadata] = useState({});
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -77,7 +75,7 @@ export default function NFT({ tx, readContracts, localProvider, userSigner, nftA
         width: 240,
         margin: "auto",
       }}
-      cover={<img alt="NFT Image" src={objectMetadata.image} />}
+      cover={<img alt="NFT" src={objectMetadata.image} />}
     >
       <Card.Meta title={title} description={description} />
       {price && <>Price: {ethers.utils.formatEther(nftPrice)} Ξ</>}

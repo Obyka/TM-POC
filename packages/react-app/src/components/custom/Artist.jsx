@@ -64,14 +64,13 @@ export default function Artist({
 
   return (
     <Card
-      style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}
+      style={{ margin: "auto", marginTop: 0, marginLeft: 0, marginRight: 0, width: "100%" }}
       bordered={false}
       title={
         <>
           Artist <Address address={contractAddress} ensProvider={mainnetProvider} fontSize={15} />
         </>
       }
-      style={{ margin: "auto", marginTop: 0, marginLeft: 0, marginRight: 0, width: "100%" }}
     >
       {artistsAddresses.includes(contractAddress) ? (
         <>

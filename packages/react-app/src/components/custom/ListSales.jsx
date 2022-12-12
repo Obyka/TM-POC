@@ -139,7 +139,7 @@ export default function ListSales({
             onClick={async () => {
               try {
                 const options = { value: sales.get(item).price };
-                const reciept = tx(sales.get(item).contract.purchase(options), updateNotif);
+                tx(sales.get(item).contract.purchase(options), updateNotif);
               } catch (error) {
                 console.log(error);
               }

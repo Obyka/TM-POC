@@ -127,11 +127,10 @@ export default function Agreement({
     setArtistsVoteMap(new Map(artistsVoteMap.set(k, v)));
   };
 
-  useEffect(async () => {
+  useEffect(() => {
     deriveArtistsFromEvents();
     deriveStateFromEvents();
     deriveVoteFromEvents();
-    console.log(JSON.stringify(await contract.queryFilter("*", 0)));
 
     contract.on("Init", () => {
       console.log("CONTRACT STATE -- INIT");
@@ -182,7 +181,7 @@ export default function Agreement({
       {agreementsAddresses.includes(contractAddress) ? (
         <>
           {agreementState}
-          {agreementState == States.Redeemable && (
+          {agreementState === States.Redeemable && (
             <h3> Amount to redeem: {ethers.utils.formatEther(redeemAmount)} Ξ</h3>
           )}
 
@@ -223,7 +222,7 @@ export default function Agreement({
             <Button
               onClick={async () => {
                 try {
-                  const result = tx(contract.cancelAgreement(), updateNotif);
+                  tx(contract.cancelAgreement(), updateNotif);
                 } catch (error) {
                   console.log(error);
                 }
@@ -237,7 +236,7 @@ export default function Agreement({
             <Button
               onClick={async () => {
                 try {
-                  const result = tx(contract.redeem_tyxit(), updateNotif);
+                  tx(contract.redeem_tyxit(), updateNotif);
                 } catch (error) {
                   console.log(error);
                 }

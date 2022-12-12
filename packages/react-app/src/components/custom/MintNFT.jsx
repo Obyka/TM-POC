@@ -77,7 +77,7 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
 
               <div style={{ marginBottom: 8 }}>
                 <img
-                  alt={`NFT Image to mint`}
+                  alt={`NFT to mint`}
                   src={"https://tyxit-demo.infura-ipfs.io/ipfs/" + image.path}
                   style={{ maxWidth: "100px", margin: "0px" }}
                 />
@@ -132,7 +132,6 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
                   setArtists([]);
 
                   const results = readString(event.target.value, { dynamicTyping: true });
-                  let invalidData = false;
 
                   try {
                     if (results.data) {
@@ -140,7 +139,6 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
                         if (!ethers.utils.isAddress(currentLine[0])) {
                           setArtists([address]);
                           throw "invalid data";
-                          invalidData = true;
                         } else {
                           console.log("congrat");
                           setArtists(prev => [...prev, currentLine[0]]);
