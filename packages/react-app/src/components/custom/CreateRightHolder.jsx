@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { Button, Card, Form } from "antd";
 import { useContractReader } from "eth-hooks";
-import { Button, Card, Form, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
-import { AddressInput, Address, Balance, Events } from "../";
+import React, { useState } from "react";
+import { Address } from "../";
 
 export default function CreateRightHolder({ address, tx, readContracts, writeContracts, mainnetProvider }) {
   const rightHolderContract = useContractReader(

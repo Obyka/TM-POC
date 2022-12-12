@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { Button, Divider, Input } from "antd";
 import { useContractReader } from "eth-hooks";
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
-import { AddressInput, Address, Balance, Events } from "..";
+import React, { useState } from "react";
+import { Address } from "..";
 
 export default function AgreementsArtist({ address, tx, readContracts, writeContracts, mainnetProvider }) {
   const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 5);

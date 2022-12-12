@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { Card } from "antd";
 import { ethers } from "ethers";
-import { Button, Card, Empty, List } from "antd";
 import { create } from "ipfs-http-client";
+import React, { useEffect, useState } from "react";
 export const NFTABI = [
   "function safeMint(address to, string memory uri) public returns (uint256 newTokenId)",
   "function tokenURI(uint256 tokenId) public view returns (string memory)",

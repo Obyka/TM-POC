@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useContractReader } from "eth-hooks";
+import { Button, List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
-import { Button, Form, Card, Space, Input, Slider, Spin, Switch, List, InputNumber } from "antd";
-import { AddressInput, Address, Balance, Events } from "../";
-import { readString } from "react-papaparse";
 import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
 import { AgreementABI } from "./Agreement.jsx";
-import NFT, { NFTABI } from "./NFT.jsx";
-import { create } from "ipfs-http-client";
-
-const { BufferList } = require("bl");
+import NFT from "./NFT.jsx";
 
 export default function ListSales({
   userSigner,

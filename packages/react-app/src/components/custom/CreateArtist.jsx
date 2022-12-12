@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useContractReader } from "eth-hooks";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Form, Card, Space, Input, Slider, Spin, Switch, Upload, InputNumber } from "antd";
-import { AddressInput, Address, Balance, Events } from "../";
-import { readString } from "react-papaparse";
+import { Button, Card, Form, Input, InputNumber, Space } from "antd";
+import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
+import { Address } from "../";
 
 export default function CreateArtist({ address, tx, readContracts, writeContracts, mainnetProvider }) {
   const artistContract = useContractReader(readContracts, "FactoryCloneArtist", "artistToContract", [address], 5);

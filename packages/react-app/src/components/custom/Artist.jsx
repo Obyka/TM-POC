@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { Button, Card, Empty, List } from "antd";
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Card, Empty, List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
+import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
 import { Address } from "../";
-import VoteForm from "./VoteForm";
 import PreconditionsForm from "./PreconditionsForm";
 export const ArtistABI = [
   "event Init(address indexed _artist, address[] _rightsHolders, uint[] _sharesInBPS)",

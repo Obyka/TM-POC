@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { Button, Card, List, Collapse } from "antd";
+import { Collapse, List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
+import React from "react";
 import Agreement from "./Agreement";
-import VoteForm from "./VoteForm";
 const { Panel } = Collapse;
 export default function ManageAgreementsArtists({
   address,

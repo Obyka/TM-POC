@@ -1,21 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { List } from "antd";
 import { useContractReader } from "eth-hooks";
-import { useEventListener } from "eth-hooks/events/useEventListener";
-import { Button, Form, Card, Space, Input, Slider, Spin, Switch, List, InputNumber } from "antd";
-import { AddressInput, Address, Balance, Events } from "../";
-import { ethers } from "ethers";
-import { AgreementABI } from "./Agreement.jsx";
-import NFT, { NFTABI } from "./NFT.jsx";
+import React, { useEffect, useState } from "react";
+import NFT from "./NFT.jsx";
 
-export default function ListSales({
-  userSigner,
-  address,
-  tx,
-  readContracts,
-  writeContracts,
-  mainnetProvider,
-  localProvider,
-}) {
+export default function ListSales({ userSigner, address, tx, readContracts, localProvider }) {
   function updateNotif(update) {
     console.log("📡 Transaction Update:", update);
     if (update && (update.status === "confirmed" || update.status === 1)) {

@@ -1,12 +1,7 @@
-import React, { useState } from "react";
 import { Button, Card } from "antd";
-import { AddressInput, Address, Balance, Events } from "../";
-import { useEventListener } from "eth-hooks/events/useEventListener";
-import { useContractReader, useBalance } from "eth-hooks";
-import Artist from "./Artist";
-import { local } from "web3modal";
-import { useEffect } from "react";
+import { useBalance, useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
+import React from "react";
 import { ArtistABI } from "./Artist";
 export default function ManageAffiliations({
   address,

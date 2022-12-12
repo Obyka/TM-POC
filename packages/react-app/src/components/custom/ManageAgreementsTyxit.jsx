@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { Button, Card, List } from "antd";
+import { List } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
-import { Address } from "..";
+import React from "react";
 import Agreement from "./Agreement";
 export default function ManageAgreementsTyxit({
   address,
