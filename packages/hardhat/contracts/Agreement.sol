@@ -96,7 +96,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     uint royaltiesInBps;
     bool exploitable;
     uint bpsBasis;
-    uint tyxitBalance;
+    uint public tyxitBalance;
 
     // These are for checking agreement validity for each artist
     uint maxPreconditionTier;
@@ -149,7 +149,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
 
     function purchase() external payable {
         require(contractState == State.ForSale, "Can not purchase yet");
-        require(msg.value >= tierPrice[saleTier], "Not enough ether sent");
+        require(msg.value == tierPrice[saleTier], "Not enough ether sent");
 
         collection.transferFrom(address(this), msg.sender, tokenId);
         contractState = State.Redeemable;
@@ -158,6 +158,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     }
 
     receive() external payable {
+        require(contractState == State.Redeemable || contractState == State.ForSale);
         splitEther(msg.value);
     }
 
@@ -191,6 +192,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
                 contractState == State.Canceled,
             "Contract not in Redeemable or Canceled state"
         );
+        require(msg.sender == ISettings(settings).feeReceiver(), "Caller is not fee receiver");
 
         uint toRedeem = tyxitBalance;
         address payable tyxitAddress = ISettings(settings).feeReceiver();

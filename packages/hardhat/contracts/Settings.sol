@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Settings is Ownable, ISettings {
     /// @notice Max fee in BPS for royalties and primary sales
-    uint256 public constant maxFeeAmount = 1000;
+    uint256 public constant maxFeeAmount = 1500;
 
     /// @notice fee in BPS for royalties and primary sales
     uint256 public override feeAmount;

@@ -32,7 +32,17 @@ describe("Agreement tests", function () {
         ]
     const PURCHASE_CASE = [
         // Share1, share2, share3, shareTyxit expected1, expected2, expected3, expectedTyxit, price
-        [1, 49, 50, 2.5, 0.1],
+        [1, 49, 50, 5, "0.00095", "0.04655", "0.0475", "0.005", "0.1", 0],
+        [100, 0, 0, 5, "0.19", "0", "0", "0.01", "0.2", 1],
+        [1, 1, 1, 5, "0.0038", "0.0038", "0.0038", "0.02", "0.4", 2],
+    ]
+
+    const ROYALTIES_CASE = [
+        // Share1, share2, share3, shareTyxit expected1, expected2, expected3, expectedTyxit, price
+        [1, 49, 50, 5, "0.00095", "0.04655", "0.0475", "0.005", "0.1", 0],
+        [100, 0, 0, 5, "0.19", "0", "0", "0.01", "0.2", 1],
+        [1, 1, 1, 5, "0.0038", "0.0038", "0.0038", "0.02", "0.4", 2],
+        [33, 44, 23, 15, "0.00000002805", "0.0000000374", "0.00000001955", "0.000000015", "0.0000001", 2],
     ]
 
 
@@ -42,7 +52,7 @@ describe("Agreement tests", function () {
         const nftContract = await SampleNFTContract.deploy("");
 
         const SettingsContract = await ethers.getContractFactory("Settings");
-        const settingsContract = await SettingsContract.deploy(nftContract.address)
+        const settingsContract = await SettingsContract.connect(admin1).deploy(nftContract.address)
 
         const FactoryCloneAgreement = await ethers.getContractFactory("FactoryCloneAgreement");
         const factoryCloneAgreement = await FactoryCloneAgreement.deploy(settingsContract.address);
@@ -174,7 +184,7 @@ describe("Agreement tests", function () {
     describe("Agreement vote", function () {
         it("Voting should revert if contract state is canceled", async function () {
             const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
-            await agreementContract.cancelAgreement()
+            await agreementContract.connect(admin1).cancelAgreement()
             await expect(agreementContract.connect(artist1Sig).vote(0, 0, 0, false, adhesionContracts[0].address))
                 .to.be.revertedWith("Contract not in Initialized state");
         });
@@ -237,7 +247,7 @@ describe("Agreement tests", function () {
         });
         it("Put for sale should revert if contract state is canceled", async function () {
             const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
-            await agreementContract.cancelAgreement()
+            await agreementContract.connect(admin1).cancelAgreement()
             await expect(agreementContract.connect(artist1Sig).putForSale())
                 .to.be.revertedWith("Contract not in Initialized state");
         });
@@ -373,11 +383,11 @@ describe("Agreement tests", function () {
             await agreementContract.connect(artist1Sig).vote(0, 0, 0, true, adhesionContracts[0].address)
             await agreementContract.connect(artist2Sig).vote(0, 0, 0, true, adhesionContracts[1].address)
             await agreementContract.connect(artist3Sig).vote(0, 0, 0, true, adhesionContracts[2].address)
-            
+
             await expect(agreementContract.connect(artist1Sig).putForSale())
-            .to.emit(agreementContract, "ForSale")
-            .withArgs(ethers.utils.parseEther("0.1"))
-            
+                .to.emit(agreementContract, "ForSale")
+                .withArgs(ethers.utils.parseEther("0.1"))
+
         });
 
         it(`Put for sale should emit VoteResult event with correct values`, async function () {
@@ -386,11 +396,11 @@ describe("Agreement tests", function () {
             await agreementContract.connect(artist1Sig).vote(1000, 1000, 1, true, adhesionContracts[0].address)
             await agreementContract.connect(artist2Sig).vote(1000, 1000, 1, true, adhesionContracts[1].address)
             await agreementContract.connect(artist3Sig).vote(1000, 1000, 1, true, adhesionContracts[2].address)
-            
+
             await expect(agreementContract.connect(artist1Sig).putForSale())
-            .to.emit(agreementContract, "VoteResult")
-            .withArgs(1000, 1, true)
-            
+                .to.emit(agreementContract, "VoteResult")
+                .withArgs(1000, 1, true)
+
         });
     });
 
@@ -406,7 +416,7 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price).sub(1)}
+            const options = { value: ethers.BigNumber.from(price).sub(1) }
             await expect(agreementContract.purchase(options)).to.be.revertedWith("Not enough ether sent")
         });
 
@@ -421,10 +431,10 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price)}
+            const options = { value: ethers.BigNumber.from(price) }
             expect(await agreementContract.purchase(options)).to.not.be.reverted
         });
-        it(`Purchase should execute if message value is greater than sale price`, async function () {
+        it(`Purchase should revert if message value is greater than sale price`, async function () {
             const { adhesionContracts, agreementContract } = await loadFixture(deployContracts)
 
             await agreementContract.connect(artist1Sig).vote(1000, 1000, 1, true, adhesionContracts[0].address)
@@ -435,14 +445,14 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price).mul(2)}
-            expect(await agreementContract.purchase(options)).to.not.be.reverted
+            const options = { value: ethers.BigNumber.from(price).mul(2) }
+            await expect(agreementContract.purchase(options)).to.be.reverted
         });
         it(`Purchase should revert if contract state is not ForSale`, async function () {
             const { adhesionContracts, agreementContract } = await loadFixture(deployContracts)
-            const options = {value: ethers.utils.parseEther("10.0")}
+            const options = { value: ethers.utils.parseEther("10.0") }
             await expect(agreementContract.purchase(options)).to.be.revertedWith("Can not purchase yet")
-            await agreementContract.cancelAgreement()
+            await agreementContract.connect(admin1).cancelAgreement()
             await expect(agreementContract.purchase(options)).to.be.revertedWith("Can not purchase yet")
         });
         it(`A successful Purchase should send the tokenId to the buyer`, async function () {
@@ -456,7 +466,7 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price)}
+            const options = { value: ethers.BigNumber.from(price) }
 
             await agreementContract.connect(buyer1Sig).purchase(options)
             expect(await nftContract.ownerOf(0)).to.be.equal(buyer1Sig.address)
@@ -472,7 +482,7 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price)}
+            const options = { value: ethers.BigNumber.from(price) }
 
             await agreementContract.connect(buyer1Sig).purchase(options)
             expect(await agreementContract.contractState()).to.be.equal(3)
@@ -488,16 +498,238 @@ describe("Agreement tests", function () {
             const receipt = await tx.wait()
             const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
             const price = { ...forSaleEvent[0].args }._price
-            const options = {value: ethers.BigNumber.from(price)}
+            const options = { value: ethers.BigNumber.from(price) }
 
             await expect(agreementContract.connect(buyer1Sig).purchase(options))
-            .to.emit(agreementContract, "Purchase")
-            .withArgs(buyer1Sig.address, price)
+                .to.emit(agreementContract, "Purchase")
+                .withArgs(buyer1Sig.address, price)
         });
-
     });
 
     describe("splitEther", function () {
+        PURCHASE_CASE.forEach((elem) => {
+            //  Share1, share2, share3, shareTyxit expected1, expected2, expected3, expectedTyxit, price
+
+            it(`A purchase should be split according to shares.`, async function () {
+                //feeAmount
+                const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+                await settingsContract.setFeeAmount(elem[3] * 100)
+                await agreementContract.connect(artist1Sig).vote(1000, elem[0] * 100, elem[9], true, adhesionContracts[0].address)
+                await agreementContract.connect(artist2Sig).vote(1000, elem[1] * 100, elem[9], true, adhesionContracts[1].address)
+                await agreementContract.connect(artist3Sig).vote(1000, elem[2] * 100, elem[9], true, adhesionContracts[2].address)
+                const tx = await agreementContract.connect(artist1Sig).putForSale()
+                const receipt = await tx.wait()
+                const options = { value: ethers.utils.parseEther(elem[8]) }
+
+                agreementContract.connect(buyer1Sig).purchase(options)
+                const artist1Struct = { ...await agreementContract.connect(artist1Sig).artistMapping(artist1Sig.address) };
+                const artist2Struct = { ...await agreementContract.connect(artist2Sig).artistMapping(artist2Sig.address) };
+                const artist3Struct = { ...await agreementContract.connect(artist3Sig).artistMapping(artist3Sig.address) };
+                const tyxitBalance = await agreementContract.connect(artist1Sig).tyxitBalance();
+                expect(artist1Struct.balance).to.be.equal(ethers.utils.parseEther(elem[4]))
+                expect(artist2Struct.balance).to.be.equal(ethers.utils.parseEther(elem[5]))
+                expect(artist3Struct.balance).to.be.equal(ethers.utils.parseEther(elem[6]))
+                expect(tyxitBalance).to.be.equal(ethers.utils.parseEther(elem[7]))
+            });
+        })
+        ROYALTIES_CASE.forEach((elem) => {
+            it(`Royalties (fallback function) should be split according to shares`, async function () {
+                const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+                await settingsContract.setFeeAmount(elem[3] * 100)
+                await agreementContract.connect(artist1Sig).vote(1000, elem[0] * 100, elem[9], true, adhesionContracts[0].address)
+                await agreementContract.connect(artist2Sig).vote(1000, elem[1] * 100, elem[9], true, adhesionContracts[1].address)
+                await agreementContract.connect(artist3Sig).vote(1000, elem[2] * 100, elem[9], true, adhesionContracts[2].address)
+                const tx = await agreementContract.connect(artist1Sig).putForSale()
+                const receipt = await tx.wait()
+                const txRoyalties = {
+                    to: agreementContract.address,
+                    value: ethers.utils.parseEther(elem[8])
+                };
+
+                await buyer1Sig.sendTransaction(txRoyalties)
+                const artist1Struct = { ...await agreementContract.connect(artist1Sig).artistMapping(artist1Sig.address) };
+                const artist2Struct = { ...await agreementContract.connect(artist2Sig).artistMapping(artist2Sig.address) };
+                const artist3Struct = { ...await agreementContract.connect(artist3Sig).artistMapping(artist3Sig.address) };
+                const tyxitBalance = await agreementContract.connect(artist1Sig).tyxitBalance();
+
+                expect(artist1Struct.balance).to.be.equal(ethers.utils.parseEther(elem[4]))
+                expect(artist2Struct.balance).to.be.equal(ethers.utils.parseEther(elem[5]))
+                expect(artist3Struct.balance).to.be.equal(ethers.utils.parseEther(elem[6]))
+                expect(tyxitBalance).to.be.equal(ethers.utils.parseEther(elem[7]))
+            });
+        });
+    });
+
+
+    describe("Redeem", function () {
+        it("Redeem_artist should revert if contract state is not Redeemable or Canceled", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await expect(agreementContract.connect(artist1Sig).redeem_artist(adhesionContracts[0].address))
+                .to.be.revertedWith("Contract not in Redeemable or Canceled state")
+
+            await agreementContract.connect(artist1Sig).vote(1000, 0, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            await expect(agreementContract.connect(artist1Sig).redeem_artist(adhesionContracts[0].address))
+                .to.be.revertedWith("Contract not in Redeemable or Canceled state")
+        });
+
+        it("Redeem_artist should emit Redeem event with correct values", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract.connect(artist1Sig)
+                .redeem_artist(adhesionContracts[0].address))
+                .to.emit(agreementContract, "Redeem")
+                .withArgs(artist1Sig.address, ethers.utils.parseEther("0.095"))
+        });
+
+        it("Redeem_artist should revert if adhesion contract is not valid ", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract.connect(artist1Sig)
+                .redeem_artist(adhesionContracts[1].address))
+                .to.be.revertedWith("Sender is not the owner of supplied voter contract")
+        });
+
+        it("Redeem_artist should set artist balance to 0", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await agreementContract.connect(artist1Sig)
+                .redeem_artist(adhesionContracts[0].address)
+
+            const artist1Struct = { ...await agreementContract.connect(artist1Sig).artistMapping(artist1Sig.address) };
+            expect(artist1Struct.balance).to.be.equal(0)
+        });
+
+        it("Redeem_artist should send ether to artist address", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract.connect(artist1Sig)
+                .redeem_artist(adhesionContracts[0].address)
+            ).to.changeEtherBalance(adhesionContracts[0], ethers.utils.parseEther("0.095"));
+        });
+
+        it("Redeem_tyxit should revert if msg.sender is not feeReceiver based on settings ", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract.connect(artist1Sig)
+                .redeem_tyxit())
+                .to.be.revertedWith("Caller is not fee receiver")
+        });
+
+        it("Redeem_tyxit should set tyxit balance to 0", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await agreementContract
+                .connect(admin1)
+                .redeem_tyxit()
+
+            expect(await agreementContract.tyxitBalance()).to.be.equal(0)
+        });
+
+        it("Redeem_tyxit should emit Redeem event with correct values", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract
+                .connect(admin1)
+                .redeem_tyxit())
+                .to.emit(agreementContract, "Redeem")
+                .withArgs(admin1.address, ethers.utils.parseEther("0.005"))
+        });
+
+        it("Redeem_tyxit should send ether to fee receiver address", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await agreementContract.connect(artist1Sig).vote(1000, 100 * 100, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            const receipt = await tx.wait()
+            const forSaleEvent = receipt.events.filter(x => x.event == "ForSale")
+            const price = { ...forSaleEvent[0].args }._price
+            const options = { value: price }
+            await agreementContract.connect(buyer1Sig).purchase(options)
+
+            await expect(agreementContract.connect(admin1)
+                .redeem_tyxit()
+            ).to.changeEtherBalance(admin1, ethers.utils.parseEther("0.005"));
+        });
+
+        it("Redeem_tyxit should revert if contract state is not Redeemable or Canceled", async function () {
+            const { adhesionContracts, agreementContract, settingsContract } = await loadFixture(deployContracts)
+            await expect(agreementContract.connect(admin1).redeem_tyxit())
+                .to.be.revertedWith("Contract not in Redeemable or Canceled state")
+
+            await agreementContract.connect(artist1Sig).vote(1000, 0, 0, true, adhesionContracts[0].address)
+            await agreementContract.connect(artist2Sig).vote(1000, 0, 0, true, adhesionContracts[1].address)
+            await agreementContract.connect(artist3Sig).vote(1000, 0, 0, true, adhesionContracts[2].address)
+            const tx = await agreementContract.connect(artist1Sig).putForSale()
+            await expect(agreementContract.connect(admin1).redeem_tyxit())
+                .to.be.revertedWith("Contract not in Redeemable or Canceled state")
+        });
     });
 
 });
