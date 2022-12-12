@@ -50,7 +50,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         address _artist,
         uint _royaltiesInBps,
         uint _ownShare,
-        Tier _nftTier,
+        uint _nftTier,
         bool _exploitable
     );
 
@@ -317,7 +317,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             msg.sender,
             _royaltiesInBps,
             _ownShareInBps,
-            _nftTier,
+            uint(_nftTier),
             _exploitable
         );
     }

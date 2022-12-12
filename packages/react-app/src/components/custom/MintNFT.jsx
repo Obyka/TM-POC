@@ -204,7 +204,6 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
                         readContracts.FactoryCloneAgreement.predictDeterministicAddress(
                           implementationAddress,
                           randomNumberSalt,
-                          address,
                         ),
                       );
                       predictAddressPromise.then(function (predictedAddress) {
@@ -215,12 +214,7 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
                             artists.push(address);
                             console.log(`Created Agreement ${artists}\n${readContracts.SampleNFT.address}\n${tokenID}`);
                             tx(
-                              writeContracts.FactoryCloneAgreement.createAgreement(
-                                artists,
-                                readContracts.SampleNFT.address,
-                                tokenID,
-                                randomNumberSalt,
-                              ),
+                              writeContracts.FactoryCloneAgreement.createAgreement(artists, tokenID, randomNumberSalt),
                               updateNotif,
                             )
                               .then(() => console.log("Creation du contrat d'agreement"))

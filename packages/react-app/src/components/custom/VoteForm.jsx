@@ -84,6 +84,12 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
                   const values = await voteForm.validateFields();
                   console.log("Success:", values);
                   try {
+                    console.log(`royaltiesInBps ${royaltiesInBps}`);
+                    console.log(`ownShare ${ownShare}`);
+                    console.log(`nftTier ${nftTier}`);
+                    console.log(`exploitable ${exploitable}`);
+                    console.log(`artistContract ${artistContract}`);
+
                     const result = tx(
                       agreementContract.vote(royaltiesInBps, ownShare, nftTier, exploitable, artistContract),
                       updateNotif,

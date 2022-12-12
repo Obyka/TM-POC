@@ -95,32 +95,23 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     // TokenID
     // https://github.com/scaffold-eth/scaffold-eth-examples/blob/merkler/packages/react-app/src/views/NewMerkler.jsx
     let tokenID = receipt.events[0].args[2]
-    console.log(`Minted tokenID ${tokenID}`);
 
     // Prédiction et création de l'agreement
     const randomNumberSalt = ethers.BigNumber.from(ethers.utils.randomBytes(32));
     const implementationAddress = await FactoryCloneAgreement.agreementImpl();
 
-    console.log(
-        `Salt: ${randomNumberSalt}\n Impl. Address: ${implementationAddress}\n Address: ${artist1}`,
-    );
     const predictAddress = await FactoryCloneAgreement.predictDeterministicAddress(
         implementationAddress,
         randomNumberSalt,
-        artist1,
     )
 
-    console.log(`Predicted address ${predictAddress}`)
 
     // Approve du contrat Agreement pour le tokenID
     await SampleNFT.connect(artist1Sig).approve(predictAddress, tokenID)
     
-    console.log("Approved address")
     // Création de l'agreement entre artist1 et artist2
-    console.log(Settings.address)
     const createdAgreement = await FactoryCloneAgreement.connect(artist1Sig).createAgreement([artist1, artist2], tokenID, randomNumberSalt)
     //let agreementReceipt = await createdAgreement.wait()
-    console.log("Agreement created")
     const cloneAgreementContract = new ethers.Contract(predictAddress, AgreementABI);
 
     // Votes de artist1 et artist2
@@ -133,7 +124,8 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     // Mise en vente de l'agreement
     const putForSale = await cloneAgreementContract.connect(artist1Sig).putForSale()
     const receiptPutForSale = await putForSale.wait();
-    const nftPrice = receiptPutForSale.events[0].args._price
+    console.log(receiptPutForSale)
+    const nftPrice = receiptPutForSale.events[1].args._price
 
     // Achat du NFT par NFTBuyer
     const options = { value: nftPrice}

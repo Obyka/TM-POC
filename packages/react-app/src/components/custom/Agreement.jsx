@@ -15,22 +15,23 @@ export const States = {
 };
 
 export const AgreementABI = [
-  "function initialize(uint256 _tokenId,address[] memory _artists,address _initialOwner,address _settings) external",
-  "function purchase() external payable",
-  "function getState() public view returns (uint)",
-  "function cancelAgreement() public",
-  "function redeem_artist(address _adhesion) external",
-  "function redeem_tyxit()",
-  "function isArtist(address artistAddress) public view returns (bool isIndeed)",
-  "function putForSale() external",
-  "function vote(uint _royaltiesInBps,uint _ownShareInBps,Tier _nftTier,bool _exploitable,address _voter) external",
-  "function getBalance() external view returns (uint _balance)",
   "event Init(address _collectionAddress,uint256 _tokenId,address[] _artists,address _initialOwner)",
+  "event VoteResult(uint __royaltiesInBps, uint _nftTier, bool _exploitable)",
   "event ForSale(uint _price)",
   "event Purchase(address indexed _buyer, uint _value)",
   "event Redeem(address indexed _artist, uint _value)",
   "event Canceled(address admin)",
   "event NewVote(address _artist,uint _royaltiesInBps,uint _ownShare,uint _nftTier,bool _exploitable)",
+  "function initialize(uint256 _tokenId,address[] memory _artists,address _initialOwner,address _settings) external",
+  "function getBalance() external view returns (uint _balance)",
+  "function purchase() external payable",
+  "function getState() public view returns (uint)",
+  "function cancelAgreement() public",
+  "function redeem_artist(address _adhesion) external",
+  "function redeem_tyxit() external",
+  "function isArtist(address artistAddress) public view returns (bool isIndeed)",
+  "function putForSale() external",
+  "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external",
 ];
 
 export default function Agreement({
@@ -47,6 +48,8 @@ export default function Agreement({
   async function deriveVoteFromEvents() {
     let Votes = contract.filters.NewVote();
     let VoteEvents = await contract.queryFilter(Votes, 0);
+    console.log(`Vote event ${JSON.stringify(VoteEvents)}`);
+
     VoteEvents.forEach(elem => {
       const artist = elem.args[0];
       const royaltiesInBps = elem.args[1];
@@ -143,6 +146,7 @@ export default function Agreement({
     deriveArtistsFromEvents();
     deriveStateFromEvents();
     deriveVoteFromEvents();
+    console.log(JSON.stringify(await contract.queryFilter("*", 0)));
 
     contract.on("Init", () => {
       console.log("CONTRACT STATE -- INIT");
@@ -233,7 +237,11 @@ export default function Agreement({
           {admin && agreementState !== States.Canceled && (
             <Button
               onClick={async () => {
-                let tx = await contract.cancelAgreement();
+                try {
+                  const result = tx(contract.cancelAgreement(), updateNotif);
+                } catch (error) {
+                  console.log(error);
+                }
               }}
             >
               Cancel agreement
@@ -243,7 +251,11 @@ export default function Agreement({
           {admin && redeemAmount > 0 && (
             <Button
               onClick={async () => {
-                let tx = await contract.redeem_tyxit();
+                try {
+                  const result = tx(contract.redeem_tyxit(), updateNotif);
+                } catch (error) {
+                  console.log(error);
+                }
               }}
             >
               Redeem your benefits
