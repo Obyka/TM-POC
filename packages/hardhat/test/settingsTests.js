@@ -126,7 +126,6 @@ describe("Settings tests", function () {
         const maxPlatiniumPrice = await settingsContract.maxTierPrices(2);
         const maxTierPrices = [maxSilverPrice, maxGoldPrice, maxPlatiniumPrice]
 
-
         await expect(settingsContract.setFeeAmount(maxFeeAmount + 1)).to.be.revertedWith('Fee greater than max');
         await expect(settingsContract.setTierPrices(maxTierPrices.map(elem => elem + 1))).to.be.revertedWith('Price greater than max');
 

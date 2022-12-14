@@ -10,8 +10,10 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpg
 import "./IArtist.sol";
 import "./SampleNFT.sol";
 import "./ISettings.sol";
-import "hardhat/console.sol";
 
+/// @title Tyxit - Agreement
+/// @author Florian Polier
+/// @notice This contract represents an agreement between artists, it allows voting, and first sell of the underlying NFT .
 contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     // Modifiers
     modifier onlyArtist() {
@@ -110,6 +112,14 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
 
     // Public / External functions
 
+    /**
+     * @notice Init function for the agreement.
+     * @dev This function can be called only once by the factory
+     * @param _tokenId tokenId of the underlying NFT
+     * @param _artists Array of every artist's address
+     * @param _initialOwner Owner of the underlying NFT before the agreement creation
+     * @param _settings Address of the settings contract.
+     */
     function initialize(
         uint256 _tokenId,
         address[] memory _artists,
@@ -139,6 +149,9 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         emit Init(collectionAddress, _tokenId, _artists, _initialOwner);
     }
 
+    /**
+     * @notice Get the caller balance.
+     */
     function getBalance() external view returns (uint _balance) {
         if (msg.sender == ISettings(settings).feeReceiver()) {
             return tyxitBalance;
@@ -147,6 +160,9 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         }
     }
 
+    /**
+     * @notice Anyone can use this function to purchase the underlying NFT if the sale is open.
+     */
     function purchase() external payable {
         require(contractState == State.ForSale, "Can not purchase yet");
         require(msg.value == tierPrice[saleTier], "Not enough ether sent");
@@ -157,20 +173,35 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         emit Purchase(msg.sender, msg.value);
     }
 
+    /**
+     * @notice Receive Ether to the contract
+     */
     receive() external payable {
-        require(contractState == State.Redeemable || contractState == State.ForSale);
+        require(
+            contractState == State.Redeemable || contractState == State.ForSale
+        );
         splitEther(msg.value);
     }
 
+    /**
+     * @notice Get the current state of the contract
+     * @return The current state of the contract
+     */
     function getState() public view returns (State) {
         return contractState;
     }
 
+    /**
+     * @notice Allows Tyxit admins to cancel the agreement and set the state to "Canceled"
+     */
     function cancelAgreement() public onlyRole(TYXIT_ROLE) {
         contractState = State.Canceled;
         emit Canceled(msg.sender);
     }
 
+    /**
+     * @notice Allow artists to redeem their benefits if they provide their adhesion contract.
+     */
     function redeem_artist(
         address _adhesion
     ) external onlyArtist validAdhesion(_adhesion) {
@@ -186,13 +217,19 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         emit Redeem(msg.sender, toRedeem);
     }
 
+    /**
+     * @notice Allow Tyxit admin to redeem their benefits.
+     */
     function redeem_tyxit() external {
         require(
             contractState == State.Redeemable ||
                 contractState == State.Canceled,
             "Contract not in Redeemable or Canceled state"
         );
-        require(msg.sender == ISettings(settings).feeReceiver(), "Caller is not fee receiver");
+        require(
+            msg.sender == ISettings(settings).feeReceiver(),
+            "Caller is not fee receiver"
+        );
 
         uint toRedeem = tyxitBalance;
         address payable tyxitAddress = ISettings(settings).feeReceiver();
@@ -202,12 +239,20 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         emit Redeem(msg.sender, toRedeem);
     }
 
+    /**
+     * @dev Checks if an address is an artist
+     * @param artistAddress Address of the artist
+     * @return isIndeed `true` if the address is an artist, `false` otherwise
+     */
     function isArtist(
         address artistAddress
     ) public view returns (bool isIndeed) {
         return artistMapping[artistAddress].isArtist;
     }
 
+    /**
+     * @notice Places the listed token for sale if every artist voted and votes are valid.
+     */
     function putForSale() external onlyArtist {
         require(
             contractState == State.Initialized,
@@ -262,6 +307,15 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         emit ForSale(tierPrice[saleTier]);
     }
 
+    /**
+     * @dev Vote on the royalties, own share and exploitation rights of the underlying NFT
+     *
+     * @param _royaltiesInBps The royalties in basis points
+     * @param _ownShareInBps The artist's own share in basis points
+     * @param _nftTier The NFT tier (0-2)
+     * @param _exploitable If the art work is exploitable
+     * @param _voter The address of the voter's adhesion contract
+     */
     function vote(
         uint _royaltiesInBps,
         uint _ownShareInBps,
@@ -324,6 +378,14 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
 
     // Internal / Private functions
 
+    /**
+     * @dev Checks if a vote is valid, given a minimum tier and royalty pre-conditions
+     * @param _votedTier Vote tier
+     * @param _votedRoyalty Voted royalty
+     * @param tierPrecondition Minimum tier pre-condition
+     * @param royaltyPrecondition Minimum royalty pre-condition
+     * @return isValid Returns true if the vote is valid, false otherwise
+     */
     function checkVoteValidity(
         uint _votedTier,
         uint _votedRoyalty,
@@ -335,6 +397,9 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             _votedRoyalty >= royaltyPrecondition;
     }
 
+    /// @dev helper function to send funds to an external address
+    /// @param _to Destination address
+    /// @param _value in wei
     function sendViaCall(address payable _to, uint _value) internal {
         require(
             _value <= address(this).balance,
@@ -349,16 +414,25 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         return a >= b ? a : b;
     }
 
-    function newArtist(address artistAddress) internal {
-        require(!isArtist(artistAddress));
-        artistMapping[artistAddress].hasVoted = false;
-        artistMapping[artistAddress].isArtist = true;
+    ///@dev helper function to initialize an artist struct
+    ///@param _artistAddress address of the artist
+    function newArtist(address _artistAddress) internal {
+        require(!isArtist(_artistAddress));
+        artistMapping[_artistAddress].hasVoted = false;
+        artistMapping[_artistAddress].isArtist = true;
     }
 
+    /// @dev Calculate the share of Tyxit for a given amount
+    /// @param _amount amount to spliz
+    /// @return _fee the tyxit share
     function calculateFee(uint _amount) internal view returns (uint _fee) {
         return (ISettings(settings).feeAmount() * _amount) / bpsBasis;
     }
 
+    /// @dev Compute an artist amount given their share
+    /// @param _total amount to split
+    /// @param _artist address of the artist
+    /// @return _amount the amount of artist share
     function calculateArtistAmount(
         uint _total,
         address _artist
@@ -367,6 +441,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         return (_total * artistMapping[_artist].vote.ownShare) / bpsBasis;
     }
 
+    /*
+     * @dev Compute an amount to split between each artist and Tyxit according to their share
+     * @param _ethReceived amount to split
+     */
     function splitEther(uint _ethReceived) internal {
         uint amountTyxit = calculateFee(_ethReceived);
         uint amountArtists = _ethReceived - amountTyxit;

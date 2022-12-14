@@ -4,6 +4,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 import "./IArtist.sol";
 
+/// @title Tyxit - Artist
+/// @author Florian Polier
+/// @notice This contract represents an artist and let rights holders set precondition for agreements.
 contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
     struct RightsHolder {
         uint shareInBPS;
@@ -115,13 +118,8 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         }
 
         if (oldMinimalTier != _minimalTier) {
-            emit MinimalTierUpdated(
-                msg.sender,
-                oldMinimalTier,
-                _minimalTier
-            );
-            rightsHolderMap[msg.sender]
-                .minimalTier = _minimalTier;
+            emit MinimalTierUpdated(msg.sender, oldMinimalTier, _minimalTier);
+            rightsHolderMap[msg.sender].minimalTier = _minimalTier;
         }
 
         maxPreconditionRoyaltiesInBps = maxPreconditionRoyaltiesInBps <

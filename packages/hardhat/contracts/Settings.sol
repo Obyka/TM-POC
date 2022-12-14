@@ -3,7 +3,9 @@ pragma solidity ^0.8.4;
 import "./ISettings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
+/// @title Tyxit - Settings 
+/// @author Florian Polier
+/// @notice A way to store and enforce settings in the blockchain 
 contract Settings is Ownable, ISettings {
     /// @notice Max fee in BPS for royalties and primary sales
     uint256 public constant maxFeeAmount = 1500;
@@ -26,6 +28,7 @@ contract Settings is Ownable, ISettings {
     /// @notice Tyxit NFT collection address
     address payable public override collectionAddress;
 
+    /// @param _collectionAddress Address of the Tyxit NFT collection
     constructor(address payable _collectionAddress) {
         require(_collectionAddress != address(0), "Null address");
         feeAmount = 500;
@@ -69,6 +72,8 @@ contract Settings is Ownable, ISettings {
         collectionAddress = _collectionAddress;
     }
 
+    /// @notice TierPrices must be sorted in numerical order.
+    /// @param _tierPrices The number of rings from dendrochronological sample
     function setTierPrices(uint[3] memory _tierPrices) external onlyOwner {
         require(_tierPrices[1] >= _tierPrices[0], "Tier prices not sorted");
         require(_tierPrices[2] >= _tierPrices[1], "Tier prices not sorted");
