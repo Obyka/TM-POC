@@ -68,7 +68,7 @@ export default function Artist({
       bordered={false}
       title={
         <>
-          Artist <Address address={contractAddress} ensProvider={mainnetProvider} fontSize={15} />
+          Performer <Address address={contractAddress} ensProvider={mainnetProvider} fontSize={15} />
         </>
       }
     >
@@ -91,7 +91,7 @@ export default function Artist({
           <PreconditionsForm tx={tx} artistContract={contract} />
         </>
       ) : (
-        <Empty description="No artist contract at this address" />
+        <Empty description="No performer contract at this address" />
       )}
     </Card>
   );

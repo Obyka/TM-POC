@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
 import { States } from "./Agreement";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { updateNotif } from "../../helpers/helperFunctions.jsx";
 
 const { Option } = Select;
@@ -39,22 +40,49 @@ export default function VoteForm({ readContracts, address, tx, agreementContract
       onFinishFailed={onFinishFailed}
       autoComplete="off"
     >
-      <Form.Item label="Royalties in %">
+      <Form.Item
+        label="Royalties in %"
+        tooltip={{
+          title: "The final royalty is the average of all voters' input",
+          icon: <InfoCircleOutlined />,
+        }}
+      >
         <InputNumber min={0} max={100} defaultValue={0} onChange={e => setRoyaltiesInBps(e * 100)} />
       </Form.Item>
 
-      <Form.Item label="Your own share in %">
+      <Form.Item
+        label="Your own share in %"
+        tooltip={{
+          title: "The sum of all performers' shares must not exceed 100% or the sale won't open.",
+          icon: <InfoCircleOutlined />,
+        }}
+      >
         <InputNumber min={0} max={100} defaultValue={0} onChange={e => setOwnShare(e * 100)} />
       </Form.Item>
 
-      <Form.Item name="nftTier" label="Your NFT Tier" rules={[{ required: true, message: "Please select a Tier!" }]}>
+      <Form.Item
+        name="nftTier"
+        tooltip={{
+          title: "The final tier is the floored average of all voters' input",
+          icon: <InfoCircleOutlined />,
+        }}
+        label="Your NFT Tier"
+        rules={[{ required: true, message: "Please select a Tier!" }]}
+      >
         <Select placeholder="Select a Tier" onChange={value => setNftTier(ethers.BigNumber.from(value))}>
           <Option value="0">Silver</Option>
           <Option value="1">Gold</Option>
           <Option value="2">Platinium</Option>
         </Select>
       </Form.Item>
-      <Form.Item name="exploitable" valuePropName="checked">
+      <Form.Item
+        tooltip={{
+          title: "All voters must agree for the commercial rights to be transferred.",
+          icon: <InfoCircleOutlined />,
+        }}
+        name="exploitable"
+        valuePropName="checked"
+      >
         <Checkbox onChange={e => setExploitable(e.target.checked)}>
           The buyer has the right to use commercially the musical work
         </Checkbox>

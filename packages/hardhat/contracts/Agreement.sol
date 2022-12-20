@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
@@ -126,6 +126,7 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         address _initialOwner,
         address _settings
     ) external initializer {
+        require(_settings != address(0));
         __AccessControl_init();
         __ERC721Holder_init();
         TYXIT_ROLE = keccak256("TYXIT_ROLE");
@@ -133,6 +134,9 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         collectionAddress = ISettings(settings).collectionAddress();
         _setupRole(TYXIT_ROLE, ISettings(settings).administrator());
         bpsBasis = 10000;
+        tokenId = _tokenId;
+        contractState = State.Initialized;
+        tierPrice = ISettings(settings).getTierPrices();
 
         for (uint i = 0; i < _artists.length; i++) {
             address artist = _artists[i];
@@ -140,13 +144,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             newArtist(artist);
             artistList.push(artist);
         }
+        emit Init(collectionAddress, _tokenId, _artists, _initialOwner);
 
         collection = IERC721(collectionAddress);
         collection.safeTransferFrom(_initialOwner, address(this), _tokenId);
-        tokenId = _tokenId;
-        contractState = State.Initialized;
-        tierPrice = ISettings(settings).getTierPrices();
-        emit Init(collectionAddress, _tokenId, _artists, _initialOwner);
     }
 
     /**
@@ -166,11 +167,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
     function purchase() external payable {
         require(contractState == State.ForSale, "Can not purchase yet");
         require(msg.value == tierPrice[saleTier], "Not enough ether sent");
-
-        collection.transferFrom(address(this), msg.sender, tokenId);
         contractState = State.Redeemable;
-        splitEther(msg.value);
         emit Purchase(msg.sender, msg.value);
+        splitEther(msg.value);
+        collection.transferFrom(address(this), msg.sender, tokenId);
     }
 
     /**
@@ -195,8 +195,8 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
      * @notice Allows Tyxit admins to cancel the agreement and set the state to "Canceled"
      */
     function cancelAgreement() public onlyRole(TYXIT_ROLE) {
-        contractState = State.Canceled;
         emit Canceled(msg.sender);
+        contractState = State.Canceled;
     }
 
     /**
@@ -210,11 +210,10 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
                 contractState == State.Canceled,
             "Contract not in Redeemable or Canceled state"
         );
-
         uint toRedeem = artistMapping[msg.sender].balance;
+        emit Redeem(msg.sender, toRedeem);
         artistMapping[msg.sender].balance = 0;
         sendViaCall(payable(_adhesion), toRedeem);
-        emit Redeem(msg.sender, toRedeem);
     }
 
     /**
@@ -233,10 +232,9 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
 
         uint toRedeem = tyxitBalance;
         address payable tyxitAddress = ISettings(settings).feeReceiver();
-        tyxitBalance = 0;
-
-        sendViaCall(tyxitAddress, toRedeem);
         emit Redeem(msg.sender, toRedeem);
+        tyxitBalance = 0;
+        sendViaCall(tyxitAddress, toRedeem);
     }
 
     /**
@@ -262,21 +260,23 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         uint totalTier = 0;
         uint totalShareInBps = 0;
         uint totalRoyaltiesInBps = 0;
-
+        bool exploitableTemp = true;
         for (uint i = 0; i < artistList.length; i++) {
             require(
                 artistMapping[artistList[i]].hasVoted,
                 "Every artist should vote"
             );
-            exploitable = i == 0
-                ? artistMapping[artistList[i]].vote.exploitable
-                : exploitable && artistMapping[artistList[i]].vote.exploitable;
+            exploitableTemp =
+                exploitableTemp &&
+                artistMapping[artistList[i]].vote.exploitable;
             totalTier += uint(artistMapping[artistList[i]].vote.nftTier);
             totalShareInBps += uint(artistMapping[artistList[i]].vote.ownShare);
             totalRoyaltiesInBps += uint(
                 artistMapping[artistList[i]].vote.royaltiesInBps
             );
         }
+
+        exploitable = exploitableTemp;
 
         require(
             totalShareInBps <= bpsBasis,
@@ -294,17 +294,15 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             ),
             "Resulting agreement terms do not respect every preconditions"
         );
-
-        contractState = State.ForSale;
         emit VoteResult(royaltiesInBps, saleTier, exploitable);
+        emit ForSale(tierPrice[saleTier]);
+        contractState = State.ForSale;
 
         SampleNFT(collectionAddress).setTokenRoyalty(
             tokenId,
             address(this),
             uint96(royaltiesInBps)
         );
-
-        emit ForSale(tierPrice[saleTier]);
     }
 
     /**
@@ -349,7 +347,13 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
             ),
             "Vote is not compatible with preconditions"
         );
-
+        emit NewVote(
+            msg.sender,
+            _royaltiesInBps,
+            _ownShareInBps,
+            uint(_nftTier),
+            _exploitable
+        );
         // Setting the contract-wide strictest precondition
 
         maxPreconditionRoyaltiesInBps = max(
@@ -366,14 +370,6 @@ contract Agreement is ERC721HolderUpgradeable, AccessControlUpgradeable {
         );
         artistMapping[msg.sender].hasVoted = true;
         artistMapping[msg.sender].vote = currentVote;
-
-        emit NewVote(
-            msg.sender,
-            _royaltiesInBps,
-            _ownShareInBps,
-            uint(_nftTier),
-            _exploitable
-        );
     }
 
     // Internal / Private functions

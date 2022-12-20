@@ -70,7 +70,7 @@ export default function PreconditionsForm({ tx, artistContract }) {
             }
           }}
         >
-          Get your due royalties
+          Get your benefits
         </Button>
       </Form.Item>
     </Form>

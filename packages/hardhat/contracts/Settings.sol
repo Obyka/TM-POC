@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity 0.8.16;
 import "./ISettings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -34,7 +34,7 @@ contract Settings is Ownable, ISettings {
         feeAmount = 500;
         feeReceiver = payable(msg.sender);
         administrator = payable(msg.sender);
-        tierPrices = [0.1 ether, 0.2 ether, 0.4 ether];
+        tierPrices = [1 ether, 2 ether, 4 ether];
         collectionAddress = _collectionAddress;
     }
 

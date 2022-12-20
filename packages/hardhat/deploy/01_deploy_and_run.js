@@ -120,11 +120,11 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
 
     await cloneAgreementContract.connect(artist1Sig).vote(1000, 1000, 2, true, artist1Contract)
     await cloneAgreementContract.connect(artist2Sig).vote(1000, 1000, 2, false, artist2Contract)
-
+    console.log(`Agreement at ${cloneAgreementContract.address}`)
     // Mise en vente de l'agreement
     const putForSale = await cloneAgreementContract.connect(artist1Sig).putForSale()
     const receiptPutForSale = await putForSale.wait();
-    console.log(receiptPutForSale)
+    /*console.log(receiptPutForSale)
     const nftPrice = receiptPutForSale.events[1].args._price
 
     // Achat du NFT par NFTBuyer
@@ -134,7 +134,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     // Redeem par les deux artistes
     //await cloneAgreementContract.connect(artist1Sig).redeem(artist1Contract)
     //await cloneAgreementContract.connect(artist2Sig).redeem(artist2Contract)
-
+*/
 
 
 };

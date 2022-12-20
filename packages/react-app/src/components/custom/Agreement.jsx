@@ -65,7 +65,6 @@ export default function Agreement({
     });
   }
 
-  //event NewVote(address _artist, uint _royaltiesInBps, uint _ownShare, Tier _nftTier, bool _exploitable);
   async function deriveArtistsFromEvents() {
     let Initialized = contract.filters.Init();
     let InitializedEvents = await contract.queryFilter(Initialized, 0);
@@ -195,7 +194,7 @@ export default function Agreement({
                 <List.Item.Meta
                   title={
                     <>
-                      Artist address <Address address={item} ensProvider={mainnetProvider} fontSize={15} />
+                      Performer address <Address address={item} ensProvider={mainnetProvider} fontSize={15} />
                     </>
                   }
                   description={

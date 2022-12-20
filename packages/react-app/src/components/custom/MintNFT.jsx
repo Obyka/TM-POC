@@ -118,11 +118,11 @@ export default function MintNFT({ address, mainnetProvider, localProvider, tx, r
             </Form.Item>
 
             <Form.Item
-              label="Co-artists addresses"
+              label="Co-performers addresses"
               name="coartists"
               style={{ margin: 0 }}
               tooltip={{
-                title: "Enter each artist's address as a separate row",
+                title: "Enter each performer's address as a separate row",
                 icon: <InfoCircleOutlined />,
               }}
             >

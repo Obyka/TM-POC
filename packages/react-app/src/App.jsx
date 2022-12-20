@@ -248,8 +248,8 @@ function App(props) {
           <Link to="/debug">Debug Contracts</Link>
         </Menu.Item>
 
-        <Menu.Item key="/artist">
-          <Link to="/artist">Artists UI</Link>
+        <Menu.Item key="/performer">
+          <Link to="/performer">Performer</Link>
         </Menu.Item>
 
         <Menu.Item key="/nftbuyer">
@@ -347,7 +347,7 @@ function App(props) {
           />
         </Route>
 
-        <Route path="/artist">
+        <Route path="/performer">
           <Artist
             address={address}
             userSigner={userSigner}

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 import "./IArtist.sol";
@@ -49,8 +49,8 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         _registerInterface(type(IArtist).interfaceId);
         __Ownable_init();
         __ERC165Storage_init();
-        transferOwnership(_artist);
         emit Init(_artist, _rightsHolders, _shares);
+        transferOwnership(_artist);
     }
 
     function setRightsHolders(
@@ -65,25 +65,26 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
                 "invalid address for rights holder"
             );
             uint share = _shares[i];
+            emit AffiliationCreated(address(this), rightsHolder, share);
             rightsHoldersSharesInBPS += share;
 
             rightsHolderMap[rightsHolder].shareInBPS = share;
             rightsHolderMap[rightsHolder].isRightHolder = true;
 
             rightsHolderList.push(rightsHolder);
-            emit AffiliationCreated(address(this), rightsHolder, share);
         }
 
         require(
             rightsHoldersSharesInBPS <= basis,
             "Sum of shares is greater than 100%"
         );
+
         artistShareInBPS = basis - rightsHoldersSharesInBPS;
+        emit AffiliationCreated(address(this), _artist, artistShareInBPS);
 
         rightsHolderMap[_artist].shareInBPS = artistShareInBPS;
         rightsHolderMap[_artist].isRightHolder = true;
         rightsHolderList.push(_artist);
-        emit AffiliationCreated(address(this), _artist, artistShareInBPS);
     }
 
     function isRightsHolder(
@@ -154,13 +155,9 @@ contract Artist is IArtist, OwnableUpgradeable, ERC165StorageUpgradeable {
         );
         address payable to = payable(msg.sender);
         uint amountToWithdraw = rightsHolderMap[msg.sender].balance;
-        rightsHolderMap[msg.sender].balance = 0;
-        sendViaCall(to, amountToWithdraw);
         emit Withdraw(to, amountToWithdraw);
-    }
-
-    function sendViaCall(address payable _to, uint _value) internal {
-        (bool sent, ) = _to.call{value: _value}("");
+        rightsHolderMap[msg.sender].balance = 0;
+        (bool sent, ) = to.call{value: amountToWithdraw}("");
         require(sent, "Failed to send Ether");
     }
 

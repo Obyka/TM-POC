@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -21,7 +21,6 @@ contract SampleNFT is
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    address royaltiesReceiver;
     // To ensure OpenZepplin can read royalties infos
     string public contractURI;
 
