@@ -1,8 +1,4 @@
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Upload } from "antd";
-import React, { useState } from "react";
-import { useContractReader } from "eth-hooks";
-import { AddressInput, Address, Balance, Events } from "../components";
-import CreateRightHolder from "../components/custom/CreateRightHolder";
+import React from "react";
 import ManageAffiliations from "../components/custom/ManageAffiliations";
 
 export default function RightHolder({

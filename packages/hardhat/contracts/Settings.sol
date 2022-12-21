@@ -48,6 +48,10 @@ contract Settings is Ownable, ISettings {
         return tierPrices;
     }
 
+    function getMaxTierPrices() external view returns(uint[3] memory) {
+        return maxTierPrices;
+    }
+
     function setFeeAmount(uint256 _feesInBPS) external onlyOwner {
         require(_feesInBPS <= maxFeeAmount, "Fee greater than max");
         emit UpdateFeeAmount(feeAmount, _feesInBPS);

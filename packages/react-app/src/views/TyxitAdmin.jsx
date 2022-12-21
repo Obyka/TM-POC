@@ -1,8 +1,9 @@
-import { Button, Divider } from "antd";
-import React, { useState } from "react";
-
-import { AddressInput, Address, Balance, Events } from "../components";
+import { Collapse } from "antd";
+import React from "react";
 import ManageAgreementsTyxit from "../components/custom/ManageAgreementsTyxit";
+import Settings from "../components/custom/Settings";
+
+const { Panel } = Collapse;
 
 export default function TyxitAdmin({
   userSigner,
@@ -30,13 +31,27 @@ export default function TyxitAdmin({
   }
 
   return (
-    <ManageAgreementsTyxit
-      localProvider={localProvider}
-      address={address}
-      tx={tx}
-      userSigner={userSigner}
-      writeContracts={writeContracts}
-      readContracts={readContracts}
-    />
+    <Collapse defaultActiveKey={["2"]} accordion>
+      <Panel header="Manage agreements" key="1">
+        <ManageAgreementsTyxit
+          localProvider={localProvider}
+          address={address}
+          tx={tx}
+          userSigner={userSigner}
+          writeContracts={writeContracts}
+          readContracts={readContracts}
+        />
+      </Panel>
+      <Panel header="Manage settings" key="2">
+        <Settings
+          localProvider={localProvider}
+          address={address}
+          tx={tx}
+          userSigner={userSigner}
+          writeContracts={writeContracts}
+          readContracts={readContracts}
+        />
+      </Panel>
+    </Collapse>
   );
 }

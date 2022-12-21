@@ -12,11 +12,6 @@ export default function CreateArtist({ address, tx, readContracts, writeContract
   const [validData, setValidData] = useState(false);
   const [createForm] = Form.useForm();
 
-  useEffect(() => {
-    console.log(`Shares: ${shares}`);
-    console.log(`rightHolders: ${rightHolders}`);
-  }, [shares, rightHolders]);
-
   return (
     <Tooltip title="Add a row for each right holder and enter their share in percent.">
       <Card title="Create your adhesion contract" style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}>

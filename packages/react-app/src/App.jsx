@@ -31,6 +31,7 @@ import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Artist, TyxitAdmin, NFTBuyer, RightHolder } from "./views";
 import { useStaticJsonRPC } from "./hooks";
+import Visualizer from "./components/custom/Visualizer";
 
 const { ethers } = require("ethers");
 
@@ -59,6 +60,7 @@ function App(props) {
 
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
+
   const [selectedNetwork, setSelectedNetwork] = useState(networkOptions[0]);
   const location = useLocation();
 
@@ -115,7 +117,7 @@ function App(props) {
   // For more hooks, check out 🔗eth-hooks at: https://www.npmjs.com/package/eth-hooks
 
   // The transactor wraps transactions and provides notificiations
-  const tx = Transactor(userSigner, gasPrice);
+  const tx = Transactor(userSigner, gasPrice, "");
 
   // 🏗 scaffold-eth is full of handy hooks like this one to get your balance:
   const yourLocalBalance = useBalance(localProvider, address);
@@ -232,9 +234,7 @@ function App(props) {
           </div>
         </div>
       </Header>
-      {yourLocalBalance.lte(ethers.BigNumber.from("0")) && (
-        <FaucetHint localProvider={localProvider} targetNetwork={targetNetwork} address={address} />
-      )}
+
       <NetworkDisplay
         NETWORKCHECK={NETWORKCHECK}
         localChainId={localChainId}
@@ -399,8 +399,12 @@ function App(props) {
       </Switch>
 
       <ThemeSwitch />
+      <div style={{ position: "fixed", textAlign: "right", right: 0, bottom: 20, padding: 10 }}>
+        <Visualizer address={address} />
+      </div>
 
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
+      {/*
       <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
         <Row align="middle" gutter={[4, 4]}>
           <Col span={8}>
@@ -429,7 +433,6 @@ function App(props) {
         <Row align="middle" gutter={[4, 4]}>
           <Col span={24}>
             {
-              /*  if the local provider has a signer, let's show the faucet:  */
               faucetAvailable ? (
                 <Faucet localProvider={localProvider} price={price} ensProvider={mainnetProvider} />
               ) : (
@@ -439,6 +442,7 @@ function App(props) {
           </Col>
         </Row>
       </div>
+          */}
     </div>
   );
 }

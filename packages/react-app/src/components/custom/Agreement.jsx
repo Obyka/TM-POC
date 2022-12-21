@@ -175,7 +175,7 @@ export default function Agreement({
           Agreement at <Address address={contractAddress} ensProvider={mainnetProvider} fontSize={15} />
         </>
       }
-      style={{ maxWidth: 600, margin: "auto", marginTop: 10 }}
+      style={{ maxWidth: 800, margin: "auto", marginTop: 10 }}
     >
       {agreementsAddresses.includes(contractAddress) ? (
         <>
@@ -199,17 +199,21 @@ export default function Agreement({
                   }
                   description={
                     <>
-                      Has voted ? {artistsVoteMap.has(item) ? "Yes" : "No"}
-                      {artistsVoteMap.has(item) && (
-                        <ul>
-                          <li>Royalties: {artistsVoteMap.get(item).royaltiesInBps.toNumber() / 100}% </li>
-                          <li>Own share {artistsVoteMap.get(item).ownShare.toNumber() / 100}%</li>
-                          <li>NFT Tier {artistsVoteMap.get(item).nftTier}</li>
-                          <li>
-                            Commercially exploitable{" "}
-                            {artistsVoteMap.get(item).exploitable ? <CheckOutlined /> : <CloseOutlined />}
-                          </li>
-                        </ul>
+                      {agreementState === States.Initialized && (
+                        <>
+                          Has voted ? {artistsVoteMap.has(item) ? "Yes" : "No"}
+                          {artistsVoteMap.has(item) && (
+                            <ul>
+                              <li>Royalties: {artistsVoteMap.get(item).royaltiesInBps.toNumber() / 100}% </li>
+                              <li>Own share {artistsVoteMap.get(item).ownShare.toNumber() / 100}%</li>
+                              <li>NFT Tier {artistsVoteMap.get(item).nftTier}</li>
+                              <li>
+                                Commercially exploitable{" "}
+                                {artistsVoteMap.get(item).exploitable ? <CheckOutlined /> : <CloseOutlined />}
+                              </li>
+                            </ul>
+                          )}
+                        </>
                       )}
                     </>
                   }
