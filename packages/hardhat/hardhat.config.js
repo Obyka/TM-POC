@@ -2,7 +2,7 @@ require("dotenv").config();
 const { utils } = require("ethers");
 const fs = require("fs");
 const chalk = require("chalk");
-
+const { API_URL, PRIVATE_KEY } = process.env;
 require("@nomicfoundation/hardhat-chai-matchers");
 require("@tenderly/hardhat-tenderly");
 require("@nomicfoundation/hardhat-toolbox");
@@ -79,6 +79,10 @@ module.exports = {
       accounts: {
         mnemonic: mnemonic(),
       },
+    },
+    goerliAlchemy: {
+      url: API_URL,
+      accounts: [`0x${PRIVATE_KEY}`]
     },
     xdai: {
       url: "https://rpc.xdaichain.com/",
