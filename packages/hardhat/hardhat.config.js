@@ -80,10 +80,10 @@ module.exports = {
         mnemonic: mnemonic(),
       },
     },
-    goerliAlchemy: {
+    /*goerliAlchemy: {
       url: API_URL,
       accounts: [`0x${PRIVATE_KEY}`]
-    },
+    },*/
     xdai: {
       url: "https://rpc.xdaichain.com/",
       accounts: {

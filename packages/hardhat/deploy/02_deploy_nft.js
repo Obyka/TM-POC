@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat");
+/*const { ethers } = require("hardhat");
 
 module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     const { deploy } = deployments;
@@ -14,4 +14,4 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     const SampleNFT = await ethers.getContract("SampleNFT", deployer);
 
 };
-module.exports.tags = ["nft"];
+module.exports.tags = ["nft"];*/
