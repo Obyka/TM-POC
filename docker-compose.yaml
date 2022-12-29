@@ -1,0 +1,22 @@
+version: "3"
+services:
+  chain:
+    build: .
+    command: sh -c "yarn chain"
+    ports:
+      - "8545:8545"
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+  app:
+    build: .
+    command: sh -c "yarn start"
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      HARDHAT_HOST: chain

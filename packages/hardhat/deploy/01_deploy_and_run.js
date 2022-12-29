@@ -14,7 +14,7 @@ const AgreementABI = [
     "function cancelAgreement() public",
     "function isArtist(address artistAddress) public view returns(bool isIndeed)",
     "function vote(uint _royaltiesInBps,uint _ownShareInBps,uint8 _nftTier,bool _exploitable,address _voter) external",
-    "function putFor         accounts: [`0x${PRIVATE_KEY}`]Sale() external",
+    "function putForSale() external",
     "function purchase() external payable",
     "function redeem(address _adhesion) external",
     "function initialize(address _collectionAddress, uint256 _tokenId, address[] memory  _artists, address _initialOwner) external",
